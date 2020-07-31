@@ -1,3 +1,5 @@
 *.m
 *.mat
 *.xlsx
+*.swp
+*.dat
