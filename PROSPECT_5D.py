@@ -6,16 +6,13 @@ PROSPECT 5D model.
 Feret et al. - PROSPECT-D: Towards modeling leaf optical properties
     through a complete lifecycle
 """
-import pickle
 import numpy as np
 import pandas as pd
 import scipy.integrate as integrate
-from os import path
 from scipy.special import expi
 
-# TODO: write optipar read in, see set_input_from_excel.
 
-class LeafBiology():
+class LeafBiology:
     """
     Class to hold leaf biology variables.
 
@@ -62,7 +59,7 @@ class LeafBiology():
         self.N = N
 
 
-class LeafOptics():
+class LeafOptics:
     """
     Class to hold leaf optics information.
 
@@ -92,18 +89,7 @@ class LeafOptics():
         self.kChlrel = kChlrel
 
 
-def _load_optical_parameters():
-    # Load optical parameters from saved arrays
-    params_file = path.join(path.dirname(__file__),
-                            'model_parameters/optical_params.pkl')
-
-    with open(params_file, 'rb') as f:
-        params = pickle.load(f)
-
-    return params
-
-
-def PROSPECT_5D(leafbio):
+def PROSPECT_5D(leafbio, optical_params):
     """
     PROSPECT_5D model.
 
@@ -111,6 +97,8 @@ def PROSPECT_5D(leafbio):
     ----------
     leafbio : LeafBiology
         Object holding user specified leaf biology model parameters.
+    optical_params : dict
+        Optical parameter constants. Loaded externally and passed in.
 
     Returns
     -------
@@ -129,7 +117,6 @@ def PROSPECT_5D(leafbio):
     N = leafbio.N
 
     # Model constants
-    optical_params = _load_optical_parameters()
     nr = optical_params['nr']
     Kdm = optical_params['Kdm']
     Kab = optical_params['Kab']
@@ -142,6 +129,7 @@ def PROSPECT_5D(leafbio):
     Kall = (Cab * Kab + Cca * Kca + Cdm * Kdm + Cw * Kw + Cs * Ks +
             Cant * Kant) / N
 
+
     # Non-conservative scattering (normal case)
     j = np.where(Kall > 0)[0]
     t1 = (1 - Kall) * np.exp(-Kall)
@@ -152,9 +140,9 @@ def PROSPECT_5D(leafbio):
         return integrate.quad(intergrand, x, np.inf)
 
     t2 = Kall ** 2 * np.vectorize(expint)(Kall)[0]
-    tau = np.ones(len(t1))
+    tau = np.ones((len(t1), 1))
     tau[j] = t1[j] + t2[j]
-    kChlrel = np.zeros(len(t1))
+    kChlrel = np.zeros((len(t1), 1))
     kChlrel[j] = Cab * Kab[j] / (Kall[j] * N)
 
     t_alph = calculate_tav(40, nr)
@@ -266,10 +254,9 @@ def calculate_tav(alpha, nr):
 
 if __name__ == '__main__':
     # Test cases, compare to original matlab outputs
+    from SPART import load_optical_parameters
     leafbio = LeafBiology(40, 10, 0.02, 0.01, 0, 10, 1.5)
-    leafopt = PROSPECT_5D(leafbio)
+    leafopt = PROSPECT_5D(leafbio, load_optical_parameters())
     print(leafopt.tran)
     print(leafopt.refl)
     print(leafopt.kChlrel)
-
-
