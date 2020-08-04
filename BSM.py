@@ -118,7 +118,32 @@ def soilwat(rdry, nw, kw, SMp, SMC, deleff):
         Rwet_k = Rw + (1 - Rw) * (1 - p) * tw * rbac / (1 - p * tw * rbac)
         rwet = (rdry * fmul[0]) + Rwet_k[:, 1:nk].dot(fmul[1:nk])[:, np.newaxis]
 
-    return rwet
+    soilopt = SoilOptics(rwet, rdry)
+
+    return soilopt
+
+
+class SoilOptics:
+    """
+    Class to hold soil optical reflectance spectra.
+
+    Parameters
+    ----------
+    refl : np.array
+        Soil reflectance spectra (with SM taken into account)
+    refl_dry : np.array
+        Dry soil reflectance spectra
+
+    Attributes
+    ----------
+    refl : np.array
+        Soil reflectance spectra (with SM taken into account)
+    refl_dry : np.array
+        Dry soil reflectance spectra
+    """
+    def __init__(self, refl, refl_dry):
+        self.refl = refl
+        self.refl_dry = refl_dry
 
 
 class SoilParameters:
@@ -179,6 +204,6 @@ if __name__ == '__main__':
     # Test cases, compare to original matlab outputs
     from SPART import load_optical_parameters
     soilpar = SoilParameters(0.5, 0, 100, 15)
-    rwet = BSM(soilpar, load_optical_parameters())
-    print(rwet)
+    soilopt = BSM(soilpar, load_optical_parameters())
+    print(soilopt.rwet)
 

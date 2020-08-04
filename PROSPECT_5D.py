@@ -47,6 +47,10 @@ class LeafBiology:
         Anthocyanin content, micro g / cm ^ 2
     N : float
         Leaf structure parameter. Unitless.
+    rho_thermal : float
+        Reflectance in the thermal range. SPART assumption: 0.01
+    tau_thermal : float
+        Transmittance in the thermal range. SPART assumption: 0.01
     """
 
     def __init__(self, Cab, Cca, Cw, Cdm, Cs, Cant, N):
@@ -57,6 +61,8 @@ class LeafBiology:
         self.Cs = Cs
         self.Cant = Cant
         self.N = N
+        self.rho_thermal = 0.01
+        self.tau_thermal = 0.01
 
 
 class LeafOptics:
@@ -106,7 +112,6 @@ def PROSPECT_5D(leafbio, optical_params):
         Contains attributes relf, tran, kChlrel for reflectance, transmittance
         and contribution of chlorophyll over the 400 nm to 2400 nm spectrum
     """
-
     # Leaf parameters
     Cab = leafbio.Cab
     Cca = leafbio.Cca
