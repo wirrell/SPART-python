@@ -25,6 +25,7 @@ from pathlib import Path
 from BSM import BSM, SoilParameters
 from PROSPECT_5D import PROSPECT_5D, LeafBiology
 from SAILH import SAILH, CanopyStructure, Angles
+from SMAC import SMAC, AtmosphericProperties
 
 
 class SPART:
@@ -141,7 +142,7 @@ class SPART:
         leafopt.refl = self.rho
         leafopt.tran = self.tau
 
-        # Calculate canopy radiances
+        # Run the SAIL model
         rad = SAILH(soilopt, leafopt, self.canopy, self.angles) 
 
         # Interpolate whole wavelength radiances to sensor wavlengths
@@ -153,6 +154,12 @@ class SPART:
                           rad.rdd.T[0])
         rv_sd = np.interp(self.sensorinfo['wl_smac'].T[0], self.spectral.wlS,
                           rad.rsd.T[0])
+
+        # Run the atmosphere model
+        atmopt = SMAC(self.angles, self.atm, self.sensorinfo['SMAC_coef'])
+        print(atmopt.Ra_so)
+
+        # TODO: continue with line 138 in SPART_main.m script
 
 
 class SpectralBands:
@@ -336,6 +343,7 @@ if __name__ == '__main__':
     soilpar = SoilParameters(0.5, 0, 100, 15)
     canopy = CanopyStructure(3, -0.35, -0.15, 0.05)
     angles = Angles(40, 0, 0)
-    spart = SPART(soilpar, leafbio, canopy, False, angles, 'TerraAqua-MODIS',
+    atm = AtmosphericProperties(0.3246, 0.3480, 1.4116, 1013.25)
+    spart = SPART(soilpar, leafbio, canopy, atm, angles, 'TerraAqua-MODIS',
                   100)
     spart.run()
