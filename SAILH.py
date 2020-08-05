@@ -7,6 +7,7 @@ SAILH model outlined in:
     Theory of radiative transfer models applied in optical remote sensing
         - W Verhoef 1998
 """
+import scipy.io
 import numpy as np
 import scipy.integrate as integrate
 
@@ -33,7 +34,6 @@ def SAILH(soil, leafopt, canopy, angles):
         Contains the four canopy reflectances arrays as attributes rso, rdo,
         rsd, rdd.
     """
-    # TODO: write Returns part of docstring
 
     if len(leafopt.refl) != 2162:
         raise RuntimeError('Parameter leafopt.refl must be of len 2162'
@@ -52,6 +52,7 @@ def SAILH(soil, leafopt, canopy, angles):
     xl = np.arange(0, -1 - (1/nl), -1 / nl)[:, np.newaxis]
     dx = 1 / nl
     iLAI = LAI * dx
+
 
     rho = leafopt.refl
     tau = leafopt.tran
@@ -225,6 +226,7 @@ def SAILH(soil, leafopt, canopy, angles):
     
 
 class CanopyReflectances:
+    """CanopyReflectances"""
     """Class to hold canopy reflectances computed by the SAILH model.
 
     Parameters

@@ -22,10 +22,15 @@ import pickle
 import scipy.io
 import numpy as np
 from pathlib import Path
+from scipy import interpolate
 from BSM import BSM, SoilParameters
 from PROSPECT_5D import PROSPECT_5D, LeafBiology
 from SAILH import SAILH, CanopyStructure, Angles
 from SMAC import SMAC, AtmosphericProperties
+
+
+# TODO: write getter setter methods for modifying parameters without
+# reinitialization
 
 
 class SPART:
@@ -145,21 +150,37 @@ class SPART:
         # Run the SAIL model
         rad = SAILH(soilopt, leafopt, self.canopy, self.angles) 
 
+        sensor_wavelengths = self.sensorinfo['wl_smac'].T[0]
+
         # Interpolate whole wavelength radiances to sensor wavlengths
-        rv_so = np.interp(self.sensorinfo['wl_smac'].T[0], self.spectral.wlS,
+        rv_so = np.interp(sensor_wavelengths, self.spectral.wlS,
                           rad.rso.T[0])
-        rv_do = np.interp(self.sensorinfo['wl_smac'].T[0], self.spectral.wlS,
+        rv_do = np.interp(sensor_wavelengths, self.spectral.wlS,
                           rad.rdo.T[0])
-        rv_dd = np.interp(self.sensorinfo['wl_smac'].T[0], self.spectral.wlS,
+        rv_dd = np.interp(sensor_wavelengths, self.spectral.wlS,
                           rad.rdd.T[0])
-        rv_sd = np.interp(self.sensorinfo['wl_smac'].T[0], self.spectral.wlS,
+        rv_sd = np.interp(sensor_wavelengths, self.spectral.wlS,
                           rad.rsd.T[0])
 
         # Run the atmosphere model
         atmopt = SMAC(self.angles, self.atm, self.sensorinfo['SMAC_coef'])
-        print(atmopt.Ra_so)
 
-        # TODO: continue with line 138 in SPART_main.m script
+        # Upscale TOC to TOA
+        ta_ss = atmopt.Ta_ss
+        ta_sd = atmopt.Ta_sd 
+        ta_oo = atmopt.Ta_oo
+        ta_do = atmopt.Ta_do
+        ra_dd = atmopt.Ra_dd
+        ra_so = atmopt.Ra_so
+        T_g = atmopt.Tg
+
+        rtoa0 = ra_so + ta_ss * rv_so * ta_oo
+        rtoa1 = (ta_sd * rv_do + ta_ss * rv_sd * ra_dd * rv_do) * ta_oo / \
+                (1 - rv_dd * ra_dd)
+        rtoa2 = (ta_ss * rv_sd + ta_sd * rv_dd) * ta_do / (1 - rv_dd * ra_dd)
+        self.R_TOC = (ta_ss * rv_so + ta_sd * rv_do) / (ta_ss + ta_sd)
+        self.R_TOA = T_g * (rtoa0 + rtoa1 + rtoa2)
+        self.L_TOA = self._La * self.R_TOA
 
 
 class SpectralBands:

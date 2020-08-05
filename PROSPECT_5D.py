@@ -8,6 +8,7 @@ Feret et al. - PROSPECT-D: Towards modeling leaf optical properties
 """
 import numpy as np
 import pandas as pd
+import scipy.io
 import scipy.integrate as integrate
 from scipy.special import expi
 
@@ -139,6 +140,8 @@ def PROSPECT_5D(leafbio, optical_params):
     j = np.where(Kall > 0)[0]
     t1 = (1 - Kall) * np.exp(-Kall)
     def expint(x):
+        # NOTE: differences in final output come from this integral
+        # which evaluates slightly different (10 decimal places) than matlab
         # Exponential integral from expint command in matlab
         def intergrand(t):
             return np.exp(-t) / t
