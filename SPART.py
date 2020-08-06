@@ -20,18 +20,15 @@ Department of Water Resources
 """
 import pickle
 import numpy as np
+import pandas as pd
 from pathlib import Path
 from BSM import BSM, SoilParameters
 from PROSPECT_5D import PROSPECT_5D, LeafBiology
 from SAILH import SAILH, CanopyStructure, Angles
 from SMAC import SMAC, AtmosphericProperties
 
-
-# TODO: Adapt run so that we can output full 400 to 2400 spectra if we want to
-# rather than just given sensor bands
 # TODO: look at threading BSM and PROSPECT as they don't require each
 # other
-
 
 class SPART:
     """
@@ -193,17 +190,10 @@ class SPART:
 
         Returns
         -------
-        L_TOA : np.array
-            Top of atmosphere radiance
-        R_TOA : np.array
-            Top of atmosphere reflectance
-        R_TOC : np.array
-            Top of canopy reflectance
-        wlS : np.array
-            Corresponding wavelengths for the above values
+        pd.DataFrame
+            Contains the radiances and reflectances columns 'Band' 'L_TOA'
+            'R_TOA' 'R_TOC' index by central band wavelength
         """
-        # TODO: add option to only calculate TOC and skip SMAC model
-
         # Calculate ET radiance from the sun fo look angles and DOY
         if self._tracker['DOY'] or self._tracker['angles']:
             # Calculate extra-terrestrial radiance for the day
@@ -281,7 +271,14 @@ class SPART:
         self.R_TOA = T_g * (rtoa0 + rtoa1 + rtoa2)
         self.L_TOA = self._La * self.R_TOA
 
-        return self.L_TOA, self.R_TOA, self.R_TOC, self.spectral.wlS
+        bands = self.sensorinfo['band_id_smac']
+
+        results_table = pd.DataFrame(zip(bands, self.L_TOA[0], self.R_TOA[0],
+                                         self.R_TOC[0]),
+                                     index=sensor_wavelengths,
+                                     columns=['Band', 'L_TOA', 'R_TOA', 'R_TOC'])
+
+        return results_table
 
 
 class SpectralBands:
@@ -438,6 +435,6 @@ if __name__ == '__main__':
     canopy = CanopyStructure(3, -0.35, -0.15, 0.05)
     angles = Angles(40, 0, 0)
     atm = AtmosphericProperties(0.3246, 0.3480, 1.4116, 1013.25)
-    spart = SPART(soilpar, leafbio, canopy, atm, angles, 'TerraAqua-MODIS',
+    spart = SPART(soilpar, leafbio, canopy, atm, angles, 'LANDSAT8-OLI',
                   100)
     print(spart.run())
