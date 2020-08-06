@@ -27,8 +27,6 @@ from SAILH import SAILH, CanopyStructure, Angles
 from SMAC import SMAC, AtmosphericProperties
 
 
-# TODO: write getter setter methods for modifying parameters without
-# reinitialization
 # TODO: Adapt run so that we can output full 400 to 2400 spectra if we want to
 # rather than just given sensor bands
 # TODO: look at threading BSM and PROSPECT as they don't require each
@@ -63,40 +61,114 @@ class SPART:
             'Sentinel3B-OLCI'
     DOY : int
         Day of the year - Julian calendar
+
+    Attributes
+    ----------
+    soilopt : BSM.SoilOptics
+        Contains soil reflectances
+    leafopt : PROSPECT_5D.LeafOptics
+        Contains leaf reflectance and transmittance and fraction contributed
+        by chlorphyll
+    canopyopt : SAILH.CanopyReflectances
+        Contains bidrectional and directional, diffuce and specular reflectance
+    R_TOC : np.array
+        Top of canopy reflectance
+    R_TOA : np.array
+        Top of atmosphere reflectance
+    L_TOA : np.array
+        Top of atmosphere radiance
     """
-    # TODO: finish docstring with all params and attributes
     def __init__(self, soilpar, leafbio, canopy, atm, angles, sensor, DOY):
+        self._tracker = {}  # tracks changes to input parameters
         self.soilpar = soilpar
         self.leafbio = leafbio
         self.canopy = canopy
         self.atm = atm
         self.angles = angles
+        self.sensor = sensor
+        self.DOY = DOY
         self.spectral = SpectralBands()
         self.optipar = load_optical_parameters()
         self.ETpar = load_ET_parameters()
         self.sensorinfo = load_sensor_info(sensor)
-        self.sensor = sensor
-        self.DOY = DOY
 
         # Initialize arrays
 
         # Leaf reflectance array, spans 400 to 2400 nm in 1 nm increments
         # then 2500 to 15000 in 100 nm increments
         # then 16000 to 50000 in 1000 nm increments
-        self.rho = np.zeros((self.spectral.nwlP + self.spectral.nwlT, 1))
+        self._rho = np.zeros((self.spectral.nwlP + self.spectral.nwlT, 1))
         # Leaf transmittance array, as above
-        self.tau = np.zeros((self.spectral.nwlP + self.spectral.nwlT, 1))
+        self._tau = np.zeros((self.spectral.nwlP + self.spectral.nwlT, 1))
         # Soil reflectance array, as above
-        self.rsoil = np.zeros((self.spectral.nwlP + self.spectral.nwlT, 1))
+        self._rsoil = np.zeros((self.spectral.nwlP + self.spectral.nwlT, 1))
 
         # Set the model reflectance and transmittance assumptions
         self.set_refl_trans_assumptions()
 
-        # Calculate extra-terrestrial radiance for the day
-        Ra = calculate_ET_radiance(self.ETpar['Ea'], self.DOY,
-                                   self.angles.sol_angle)
-        self._La = calculate_spectral_convolution(self.ETpar['wl_Ea'], Ra,
-                                                  self.sensorinfo)
+
+    @property
+    def soilpar(self):
+        return self._soilpar
+
+    @soilpar.setter
+    def soilpar(self, soilpar):
+        self._soilpar = soilpar
+        self._tracker['soil'] = True
+
+    @property
+    def leafbio(self):
+        return self._leafbio
+
+    @leafbio.setter
+    def leafbio(self, leafbio):
+        self._leafbio = leafbio
+        self._tracker['leaf'] = True
+
+    @property
+    def canopy(self):
+        return self._canopy
+
+    @canopy.setter
+    def canopy(self, canopy):
+        self._canopy = canopy
+        self._tracker['canp'] = True
+
+    @property
+    def atm(self):
+        return self._atm
+
+    @atm.setter
+    def atm(self, atm):
+        self._atm = atm
+        self._tracker['atm'] = True
+
+    @property
+    def angles(self):
+        return self._angles
+
+    @angles.setter
+    def angles(self, angles):
+        self._angles = angles
+        self._tracker['angles'] = True
+
+    @property
+    def sensor(self):
+        return self._sensor
+
+    @sensor.setter
+    def sensor(self, sensor):
+        self._sensor = sensor
+        self._tracker['sensor'] = True
+
+    @property
+    def DOY(self):
+        return self._DOY
+
+    @DOY.setter
+    def DOY(self, DOY):
+        self._DOY = DOY
+        self._tracker['DOY'] = True
 
     def set_refl_trans_assumptions(self):
         """Sets the model assumptions about soil and leaf reflectance and
@@ -112,9 +184,9 @@ class SPART:
         -------
         None
         """
-        self.rho[self.spectral.IwlT] = self.leafbio.rho_thermal
-        self.tau[self.spectral.IwlT] = self.leafbio.tau_thermal
-        self.rsoil[self.spectral.IwlT] = 1
+        self._rho[self.spectral.IwlT] = self.leafbio.rho_thermal
+        self._tau[self.spectral.IwlT] = self.leafbio.tau_thermal
+        self._rsoil[self.spectral.IwlT] = 1
 
     def run(self):
         """Run the SPART model.
@@ -127,30 +199,49 @@ class SPART:
             Top of atmosphere reflectance
         R_TOC : np.array
             Top of canopy reflectance
+        wlS : np.array
+            Corresponding wavelengths for the above values
         """
         # TODO: add option to only calculate TOC and skip SMAC model
-        # TODO: use get and setters to order the flow here. If something
-        # has already been calculated then it can be skipped but if it has
-        # been changed then it should be reset the skip flag.
+
+        # Calculate ET radiance from the sun fo look angles and DOY
+        if self._tracker['DOY'] or self._tracker['angles']:
+            # Calculate extra-terrestrial radiance for the day
+            Ra = calculate_ET_radiance(self.ETpar['Ea'], self.DOY,
+                                       self.angles.sol_angle)
+            self._La = calculate_spectral_convolution(self.ETpar['wl_Ea'], Ra,
+                                                      self.sensorinfo)
+            self._tracker['DOY'] = False
+            self._tracker['angles'] = False
 
         # Run the BSM model
-        soilopt = BSM(self.soilpar, self.optipar)
-        self.rsoil[self.spectral.IwlP] = soilopt.refl
+        if self._tracker['soil']:
+            soilopt = BSM(self._soilpar, self.optipar)
+            # Update soil optics refl and trans to include thermal
+            # values from model assumptions
+            self._rsoil[self.spectral.IwlP] = soilopt.refl
+            self._rsoil[self.spectral.IwlT] = 1 * self._rsoil[self.spectral.nwlP
+                                                            - 1]
+            soilopt.refl = self._rsoil
+            self.soilopt = soilopt
+            self._tracker['soil'] = False
 
         # Run the PROSPECT model
-        leafopt = PROSPECT_5D(self.leafbio, self.optipar)
-        self.rho[self.spectral.IwlP] = leafopt.refl
-        self.tau[self.spectral.IwlP] = leafopt.tran
+        if self._tracker['leaf']:
+            leafopt = PROSPECT_5D(self._leafbio, self.optipar)
+            # Update leaf optics refl and trans to include thermal
+            # values from model assumptions
+            self._rho[self.spectral.IwlP] = leafopt.refl
+            self._tau[self.spectral.IwlP] = leafopt.tran
+            leafopt.refl = self._rho
+            leafopt.tran = self._tau
+            self.leafopt = leafopt
+            self._tracker['leaf'] = False
 
-        # Update soil and leaf optics refl and trans to include thermal values
-        # from model assumptions
-        self.rsoil[self.spectral.IwlT] = 1 * self.rsoil[self.spectral.nwlP - 1]
-        soilopt.refl = self.rsoil
-        leafopt.refl = self.rho
-        leafopt.tran = self.tau
 
         # Run the SAIL model
-        rad = SAILH(soilopt, leafopt, self.canopy, self.angles)
+        rad = SAILH(self.soilopt, self.leafopt, self._canopy, self._angles)
+        self.canopyopt = rad
 
         sensor_wavelengths = self.sensorinfo['wl_smac'].T[0]
 
@@ -164,17 +255,23 @@ class SPART:
         rv_sd = np.interp(sensor_wavelengths, self.spectral.wlS,
                           rad.rsd.T[0])
 
-        # Run the atmosphere model
-        atmopt = SMAC(self.angles, self.atm, self.sensorinfo['SMAC_coef'])
+        # Run the SMAC atmosphere model
+        if (self._tracker['atm'] or self._tracker['angles'] or
+            self._tracker['sensor']):
+            atmopt = SMAC(self._angles, self._atm, self.sensorinfo['SMAC_coef'])
+            self.atmopt = atmopt
+            self._tracker['atm'] = False
+            self._tracker['angles'] = False
+            self._tracker['sensor'] = False
 
         # Upscale TOC to TOA
-        ta_ss = atmopt.Ta_ss
-        ta_sd = atmopt.Ta_sd
-        ta_oo = atmopt.Ta_oo
-        ta_do = atmopt.Ta_do
-        ra_dd = atmopt.Ra_dd
-        ra_so = atmopt.Ra_so
-        T_g = atmopt.Tg
+        ta_ss = self.atmopt.Ta_ss
+        ta_sd = self.atmopt.Ta_sd
+        ta_oo = self.atmopt.Ta_oo
+        ta_do = self.atmopt.Ta_do
+        ra_dd = self.atmopt.Ra_dd
+        ra_so = self.atmopt.Ra_so
+        T_g = self.atmopt.Tg
 
         rtoa0 = ra_so + ta_ss * rv_so * ta_oo
         rtoa1 = (ta_sd * rv_do + ta_ss * rv_sd * ra_dd * rv_do) * ta_oo / \
@@ -184,7 +281,7 @@ class SPART:
         self.R_TOA = T_g * (rtoa0 + rtoa1 + rtoa2)
         self.L_TOA = self._La * self.R_TOA
 
-        return self.L_TOA, self.R_TOA, self.R_TOC
+        return self.L_TOA, self.R_TOA, self.R_TOC, self.spectral.wlS
 
 
 class SpectralBands:
