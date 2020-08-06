@@ -37,7 +37,7 @@ def BSM(soilpar, soilspec):
     nw = soilspec['nw']  # Water refraction index spectrum
 
     # Soil parameters - See object SoilParameters for variable details
-    B = soilpar.B  
+    B = soilpar.B
     lat = soilpar.lat
     lon = soilpar.lon
     SMp = soilpar.SMp
@@ -116,7 +116,8 @@ def soilwat(rdry, nw, kw, SMp, SMC, deleff):
         fmul = poisson.pmf(k, mu)
         tw = np.exp(-2 * kw * deleff * k)
         Rwet_k = Rw + (1 - Rw) * (1 - p) * tw * rbac / (1 - p * tw * rbac)
-        rwet = (rdry * fmul[0]) + Rwet_k[:, 1:nk].dot(fmul[1:nk])[:, np.newaxis]
+        rwet = (rdry * fmul[0]) + Rwet_k[:, 1:nk].dot(fmul[1:nk])[:,
+                                                                  np.newaxis]
 
     soilopt = SoilOptics(rwet, rdry)
 
@@ -206,4 +207,3 @@ if __name__ == '__main__':
     soilpar = SoilParameters(0.5, 0, 100, 15)
     soilopt = BSM(soilpar, load_optical_parameters())
     print(soilopt.rwet)
-

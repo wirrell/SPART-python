@@ -1,8 +1,8 @@
 """
 Soil-Plant-Atmosphere Radiative Transfer model
-for top-of-canopy and top-of-atmosphere reflectance 
+for top-of-canopy and top-of-atmosphere reflectance
 
-Coupling BSM, PROSAIL and SMAC to simulate TOA reflectance 
+Coupling BSM, PROSAIL and SMAC to simulate TOA reflectance
 
 Python port coded by George Worrall (gworrall@ufl.edu)
 Center for Remote Sensing, University of Florida
@@ -14,15 +14,13 @@ Christiaan van der Tol   (c.vandertol@utwente.nl)
 Wout Verhoef             (w.verhoef@utwente.nl)
 
 University of Twente
-Faculty of Geo-Information Science and Earth Observation (ITC), 
+Faculty of Geo-Information Science and Earth Observation (ITC),
 Department of Water Resources
 
 """
 import pickle
-import scipy.io
 import numpy as np
 from pathlib import Path
-from scipy import interpolate
 from BSM import BSM, SoilParameters
 from PROSPECT_5D import PROSPECT_5D, LeafBiology
 from SAILH import SAILH, CanopyStructure, Angles
@@ -31,6 +29,10 @@ from SMAC import SMAC, AtmosphericProperties
 
 # TODO: write getter setter methods for modifying parameters without
 # reinitialization
+# TODO: Adapt run so that we can output full 400 to 2400 spectra if we want to
+# rather than just given sensor bands
+# TODO: look at threading BSM and PROSPECT as they don't require each
+# other
 
 
 class SPART:
@@ -87,12 +89,12 @@ class SPART:
         # Soil reflectance array, as above
         self.rsoil = np.zeros((self.spectral.nwlP + self.spectral.nwlT, 1))
 
-        # Set the model reflectance and transmittance assumptions 
+        # Set the model reflectance and transmittance assumptions
         self.set_refl_trans_assumptions()
 
         # Calculate extra-terrestrial radiance for the day
         Ra = calculate_ET_radiance(self.ETpar['Ea'], self.DOY,
-                                         self.angles.sol_angle)
+                                   self.angles.sol_angle)
         self._La = calculate_spectral_convolution(self.ETpar['wl_Ea'], Ra,
                                                   self.sensorinfo)
 
@@ -117,19 +119,19 @@ class SPART:
     def run(self):
         """Run the SPART model.
 
-        Parameters
-        ----------
-
         Returns
         -------
-        TODO
+        L_TOA : np.array
+            Top of atmosphere radiance
+        R_TOA : np.array
+            Top of atmosphere reflectance
+        R_TOC : np.array
+            Top of canopy reflectance
         """
-        # TODO: write docstring
+        # TODO: add option to only calculate TOC and skip SMAC model
         # TODO: use get and setters to order the flow here. If something
         # has already been calculated then it can be skipped but if it has
         # been changed then it should be reset the skip flag.
-        # TODO: look at threading BSM and PROSPECT as they don't require each
-        # other
 
         # Run the BSM model
         soilopt = BSM(self.soilpar, self.optipar)
@@ -139,7 +141,7 @@ class SPART:
         leafopt = PROSPECT_5D(self.leafbio, self.optipar)
         self.rho[self.spectral.IwlP] = leafopt.refl
         self.tau[self.spectral.IwlP] = leafopt.tran
-        
+
         # Update soil and leaf optics refl and trans to include thermal values
         # from model assumptions
         self.rsoil[self.spectral.IwlT] = 1 * self.rsoil[self.spectral.nwlP - 1]
@@ -148,7 +150,7 @@ class SPART:
         leafopt.tran = self.tau
 
         # Run the SAIL model
-        rad = SAILH(soilopt, leafopt, self.canopy, self.angles) 
+        rad = SAILH(soilopt, leafopt, self.canopy, self.angles)
 
         sensor_wavelengths = self.sensorinfo['wl_smac'].T[0]
 
@@ -167,7 +169,7 @@ class SPART:
 
         # Upscale TOC to TOA
         ta_ss = atmopt.Ta_ss
-        ta_sd = atmopt.Ta_sd 
+        ta_sd = atmopt.Ta_sd
         ta_oo = atmopt.Ta_oo
         ta_do = atmopt.Ta_do
         ra_dd = atmopt.Ra_dd
@@ -181,6 +183,8 @@ class SPART:
         self.R_TOC = (ta_ss * rv_so + ta_sd * rv_do) / (ta_ss + ta_sd)
         self.R_TOA = T_g * (rtoa0 + rtoa1 + rtoa2)
         self.L_TOA = self._La * self.R_TOA
+
+        return self.L_TOA, self.R_TOA, self.R_TOC
 
 
 class SpectralBands:
@@ -256,7 +260,7 @@ def calculate_ET_radiance(Ea, DOY, tts):
     # here.
     b = 2 * np.pi * DOY / 365
     correction_factor = 1.00011 + 0.034221 * np.cos(b) + 0.00128 * np.sin(b) \
-            + 0.000719 * np.cos(2 * b) + 0.000077 * np.sin(2 * b)
+        + 0.000719 * np.cos(2 * b) + 0.000077 * np.sin(2 * b)
     La = Ea * correction_factor * np.cos(tts * np.pi / 180) / np.pi
 
     return La
@@ -294,11 +298,12 @@ def calculate_spectral_convolution(wl_hi, radiation_spectra, sensorinfo):
         return closest_index
 
     indx = get_closest_index(wl_srf, wl_hi)
-    rad = np.reshape(radiation_spectra[indx], (wl_srf.shape[0], wl_srf.shape[1]),
+    rad = np.reshape(radiation_spectra[indx], (wl_srf.shape[0],
+                                               wl_srf.shape[1]),
                      order='F')
     # Sum and normalize as p_srf is not normalized.
     rad_conv = np.sum(rad * p_srf, axis=0) / np.sum(p_srf, axis=0)
-    
+
     return rad_conv
 
 
@@ -329,35 +334,6 @@ def load_sensor_info(sensor):
         sensor_info = pickle.load(f)
     return sensor_info
 
-    if False:
-        sdir = sensor_path.parent.glob('*.mat')
-        # TODO remove when you know that we don't need to reformat pkl files
-        for x in sdir:
-
-            mat = scipy.io.loadmat(x)['sensor']
-            sensor = {}
-            fields = mat.dtype.names
-            for i in range(len(fields)):
-                sensor[fields[i]] = mat[0][0][i]
-
-            smac_keys = sensor['SMAC_coef'].dtype.names
-            smac_coef = sensor['SMAC_coef'].copy()
-
-            sensor['SMAC_coef'] = {}
-            for i in range(len(smac_keys)):
-                sensor['SMAC_coef'][smac_keys[i]] = smac_coef[0][0][i]
-
-            sensor['mission'] = sensor['mission'][0]
-            sensor['name'] = sensor['name'][0]
-            sensor['band_id_all'] = [mat[0][0] for mat in sensor['band_id_all']]
-            sensor['band_id_smac'] = [mat[0][0] for mat in sensor['band_id_smac']]
-
-            sensor_name = x.stem[18:]
-
-            sensor_path = Path(__file__).parent / f'sensor_information/{sensor_name}.pkl'
-            with open(sensor_path, 'wb') as f:
-                sensor_info = pickle.dump(sensor, f)
-
 
 if __name__ == '__main__':
     leafbio = LeafBiology(40, 10, 0.02, 0.01, 0, 10, 1.5)
@@ -367,4 +343,4 @@ if __name__ == '__main__':
     atm = AtmosphericProperties(0.3246, 0.3480, 1.4116, 1013.25)
     spart = SPART(soilpar, leafbio, canopy, atm, angles, 'TerraAqua-MODIS',
                   100)
-    spart.run()
+    print(spart.run())

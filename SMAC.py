@@ -28,9 +28,9 @@ def SMAC(angles, atm, coefs):
 
     Returns
     -------
+    AtmosphericOptics
+        Contains atmospheric reflectance and transmittance arrays
     """
-    # TODO: finish docstring
-
     # Extract variables for more concise use below.
     # Model coefficients for days.
     tts = angles.sol_angle
@@ -69,7 +69,7 @@ def SMAC(angles, atm, coefs):
     a2T = coefs['a2T']
     a3T = coefs['a3T']
     taur = coefs['taur']
-    sr = coefs['sr']
+    # sr = coefs['sr']
     a0taup = coefs['a0taup']
     a1taup = coefs['a1taup']
     wo = coefs['wo']
@@ -119,14 +119,14 @@ def SMAC(angles, atm, coefs):
     tg = th2o * to3 * to2 * tco2 * tch4 * tco * tno2  # Eq 6
 
     # spherical albedo of the atmosphere
-    s = a0s * Peq + a3s + a1s * taup550 + a2s * taup550 ** 2  # mod of Eq 8 
+    s = a0s * Peq + a3s + a1s * taup550 + a2s * taup550 ** 2  # mod of Eq 8
 
     # total scattering transmission
     ttetas = a0T + a1T * taup550 / us + (a2T * Peq + a3T) / (1 + us)
     ttetav = a0T + a1T * taup550 / uv + (a2T * Peq + a3T) / (1 + uv)
 
     # scattering angle cosine
-    cksi = - ((us * uv) + (np.sqrt(1 - us * us) * np.sqrt(1 - uv * uv) * \
+    cksi = - ((us * uv) + (np.sqrt(1 - us * us) * np.sqrt(1 - uv * uv) *
                            np.cos(psi * crd)))
 
     # hard limit on cksi -> from original matlab
@@ -143,7 +143,7 @@ def SMAC(angles, atm, coefs):
     taurz = taur * Peq  # Eq 12
 
     aer_phase = a0P + a1P * ksiD + a2P * ksiD * ksiD + a3P * ksiD ** 3 + \
-            a4P * ksiD ** 4  # extension of Eq 17
+        a4P * ksiD ** 4  # extension of Eq 17
     ak2 = (1 - wo) * (3 - wo * 3 * gc)
     ak = np.sqrt(ak2)
 
@@ -154,7 +154,7 @@ def SMAC(angles, atm, coefs):
     d = e + f
     b = 2 * ak / (3 - wo * 3 * gc)
     delta = np.exp(ak * taup) * (1 + b) ** 2 - np.exp(-ak * taup) * \
-            (1 - b) ** 2
+        (1 - b) ** 2
     ww = wo / 4
     ss = us / (1 - ak2 * us * us)
     q1 = 2 + 3 * us + (1 - wo) * 3 * gc * us * (1 + 2 * us)
@@ -162,10 +162,10 @@ def SMAC(angles, atm, coefs):
     q3 = q2 * np.exp(-taup / us)
     c1 = ((ww * ss) / delta) * (q1 * np.exp(ak * taup) * (1 + b) + q3 *
                                 (1 - b))
-    c2 = -((ww * ss) / delta) * (q1 * np.exp(-ak * taup) * (1 - b) + q3 * 
+    c2 = -((ww * ss) / delta) * (q1 * np.exp(-ak * taup) * (1 - b) + q3 *
                                  (1 + b))
-    cp1 = c1 * ak / (3 - wo * 3 * gc )
-    cp2 = -c2 * ak / (3 - wo * 3 * gc )
+    cp1 = c1 * ak / (3 - wo * 3 * gc)
+    cp2 = -c2 * ak / (3 - wo * 3 * gc)
     z = d - wo * 3 * gc * uv * dp + wo * aer_phase / 4
     x = c1 - wo * 3 * gc * uv * cp1
     y = c2 - wo * 3 * gc * uv * cp2
@@ -181,17 +181,17 @@ def SMAC(angles, atm, coefs):
 
     # Residual rayleigh (not in the paper)
     Res_ray = Resr1 + Resr2 * taur * ray_phase / (us * uv) + Resr3 * \
-            ((taur * ray_phase / (us * uv)) ** 2)
+        ((taur * ray_phase / (us * uv)) ** 2)
 
     # Residual aerosol
-    Res_aer= (Resa1 + Resa2 * (taup * m * cksi ) + Resa3 * \
-              ((taup *m * cksi) ** 2)) + Resa4 *  (taup*m*cksi) ** 3
+    Res_aer = (Resa1 + Resa2 * (taup * m * cksi) + Resa3 *
+               ((taup * m * cksi) ** 2)) + Resa4 * (taup*m*cksi) ** 3
 
     # Term coupling molecule / aerosol
     tautot = taup + taurz
 
-    Res_6s = (Rest1 + Rest2 * (tautot * m * cksi) + Rest3 * \
-              ((tautot * m *cksi) ** 2)) + Rest4 * ((tautot * m * cksi) ** 3)
+    Res_6s = (Rest1 + Rest2 * (tautot * m * cksi) + Rest3 *
+              ((tautot * m * cksi) ** 2)) + Rest4 * ((tautot * m * cksi) ** 3)
 
     # Total atmospheric reflectance
     atm_ref = ray_ref - Res_ray + aer_ref - Res_aer + Res_6s
@@ -215,9 +215,9 @@ class AtmosphericOptics:
     Parameters
     ----------
     Ta_s : np.array
-        Total scattering transmission downard 
+        Total scattering transmission downard
     Ta_o : np.array
-        Total scattering transmission upward 
+        Total scattering transmission upward
     Tg : np.array
         Transmittance for all gases
     Ra_dd : np.array
@@ -236,9 +236,9 @@ class AtmosphericOptics:
     Attributes
     ----------
     Ta_s : np.array
-        Total scattering transmission downard 
+        Total scattering transmission downard
     Ta_o : np.array
-        Total scattering transmission upward 
+        Total scattering transmission upward
     Tg : np.array
         Transmittance for all gases
     Ra_dd : np.array
@@ -256,16 +256,15 @@ class AtmosphericOptics:
     """
     def __init__(self, Ta_s, Ta_o, Tg, Ra_dd, Ra_so, Ta_ss, Ta_sd, Ta_oo,
                  Ta_do):
-            self.Ta_s = Ta_s
-            self.Ta_o = Ta_o
-            self.Tg = Tg
-            self.Ra_dd = Ra_dd
-            self.Ra_so = Ra_so
-            self.Ta_ss = Ta_ss
-            self.Ta_sd = Ta_sd
-            self.Ta_oo = Ta_oo
-            self.Ta_do = Ta_do
-
+        self.Ta_s = Ta_s
+        self.Ta_o = Ta_o
+        self.Tg = Tg
+        self.Ra_dd = Ra_dd
+        self.Ra_so = Ra_so
+        self.Ta_ss = Ta_ss
+        self.Ta_sd = Ta_sd
+        self.Ta_oo = Ta_oo
+        self.Ta_do = Ta_do
 
 
 class AtmosphericProperties:
@@ -299,19 +298,18 @@ class AtmosphericProperties:
     Pa : float
         Air pressure, hPa
     """
-    def __init__(self, aot550, uo3, uh2o, Pa=None, alt_m=None):
+    def __init__(self, aot550, uo3, uh2o, Pa=None, alt_m=None, temp_k=None):
         self.aot550 = aot550
         self.uo3 = uo3
         self.uh2o = uh2o
         if isinstance(Pa, type(None)):
             if not isinstance(alt_m, type(None)) and not isinstance(
-                temp_k, type(None)):
+                    temp_k, type(None)):
                 self.Pa = _calculate_pressure_from_altitude(alt_m, temp_k)
             else:
                 self.Pa = 1013.25
         else:
             self.Pa = Pa
-
 
 
 def _calculate_pressure_from_altitude(alt_m, temp_k):
@@ -322,8 +320,6 @@ def _calculate_pressure_from_altitude(alt_m, temp_k):
     R0 = 8.314462618
     Pa0 = 1013.25
 
-    Pa = Pa0 * np.exp(-(g * alt_m * M / (Ta0 * R0)))
+    Pa = Pa0 * np.exp(-(g * alt_m * M / (temp_k * R0)))
 
     return Pa
-
-

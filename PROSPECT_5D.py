@@ -7,10 +7,7 @@ Feret et al. - PROSPECT-D: Towards modeling leaf optical properties
     through a complete lifecycle
 """
 import numpy as np
-import pandas as pd
-import scipy.io
 import scipy.integrate as integrate
-from scipy.special import expi
 
 
 class LeafBiology:
@@ -80,7 +77,7 @@ class LeafOptics:
         Relative portion of chlorophyll contribution to reflecntace
         / transmittance in the spectral range, 400 to 2400 nm
 
-    Attributes 
+    Attributes
     ----------
     refl : np.array
         Spectral reflectance of the leaf, 400 to 2400 nm
@@ -135,10 +132,10 @@ def PROSPECT_5D(leafbio, optical_params):
     Kall = (Cab * Kab + Cca * Kca + Cdm * Kdm + Cw * Kw + Cs * Ks +
             Cant * Kant) / N
 
-
     # Non-conservative scattering (normal case)
     j = np.where(Kall > 0)[0]
     t1 = (1 - Kall) * np.exp(-Kall)
+
     def expint(x):
         # NOTE: differences in final output come from this integral
         # which evaluates slightly different (10 decimal places) than matlab
@@ -183,7 +180,7 @@ def PROSPECT_5D(leafbio, optical_params):
     a2 = a ** 2
     denom = a2 * bN2 - 1
     Rsub = a * (bN2 - 1) / denom
-    Tsub = bNm1 * (a2 -1) / denom
+    Tsub = bNm1 * (a2 - 1) / denom
 
     # Case of zero absorption
     j = np.where(r + t >= 1)[0]
@@ -197,14 +194,14 @@ def PROSPECT_5D(leafbio, optical_params):
     refl = Ra + Ta * Rsub * t / denom
 
     leafopt = LeafOptics(refl, tran, kChlrel)
-    
+
     return leafopt
 
 
 def calculate_tav(alpha, nr):
     """
     Calculate average transmissitivity of a dieletric plant surface.
-    
+
     Parameters
     ----------
     alpha : float
@@ -234,7 +231,7 @@ def calculate_tav(alpha, nr):
     a = (nr + 1) * (nr + 1) / 2
     k = -(n2 - 1) * (n2 - 1) / 4
     sa = np.sin(alpha * rd)
-    
+
     b1 = 0
     if alpha != 90:
         b1 = np.sqrt((sa ** 2 - n_p / 2) * (sa ** 2 - n_p / 2) + k)
@@ -244,12 +241,12 @@ def calculate_tav(alpha, nr):
     a3 = a ** 3
     ts = (k ** 2 / (6 * b3) + k / b - b / 2) - (k ** 2 / (6 * a3) + k / a
                                                 - a / 2)
-    
+
     tp1 = -2 * n2 * (b - a) / (n_p ** 2)
     tp2 = -2 * n2 * n_p * np.log(b / a) / (nm ** 2)
     tp3 = n2 * (1 / b - 1 / a) / 2
     tp4 = (16 * n2 ** 2 * (n2 ** 2 + 1) * np.log((2 * n_p * b - nm ** 2) /
-                                                (2 * n_p * a - nm ** 2))
+                                                 (2 * n_p * a - nm ** 2))
            / (n_p ** 3 * nm ** 2))
     tp5 = (16 * n2 ** 3 * (1 / (2 * n_p * b - nm ** 2) - 1 / (2 * n_p * a -
                                                               nm ** 2))

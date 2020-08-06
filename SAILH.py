@@ -7,7 +7,6 @@ SAILH model outlined in:
     Theory of radiative transfer models applied in optical remote sensing
         - W Verhoef 1998
 """
-import scipy.io
 import numpy as np
 import scipy.integrate as integrate
 
@@ -22,7 +21,7 @@ def SAILH(soil, leafopt, canopy, angles):
         Contains soil reflectance spectra for 400 nm to 2400 nm
     leafopt : PROSPECT_5D.LeafOptics
         Contains leaf reflectance and transmittance spectra, 400 nm to 2400 nm,
-        2500 to 15000 nm, and 16000 to 50000 nm. 
+        2500 to 15000 nm, and 16000 to 50000 nm.
     canopy : CanopyStructure
         Contains canopy information and SAIL model assumptions
     angles : Angles
@@ -48,11 +47,9 @@ def SAILH(soil, leafopt, canopy, angles):
     litab = np.array([*range(5, 80, 10), *range(81, 91, 2)])[:, np.newaxis]
     LAI = canopy.LAI
     lidf = canopy.lidf
-    x = np.arange(-1 / nl, -1 - (1/nl), -1 / nl)[:, np.newaxis]
     xl = np.arange(0, -1 - (1/nl), -1 / nl)[:, np.newaxis]
     dx = 1 / nl
     iLAI = LAI * dx
-
 
     rho = leafopt.refl
     tau = leafopt.tran
@@ -76,9 +73,9 @@ def SAILH(soil, leafopt, canopy, angles):
     sin_ttli = np.sin(litab * deg2rad)
     cos_ttli = np.cos(litab * deg2rad)
 
-    dso = np.sqrt(tan_tts ** 2 + tan_tto **2 - 2 * tan_tts * tan_tto *
+    dso = np.sqrt(tan_tts ** 2 + tan_tto ** 2 - 2 * tan_tts * tan_tto *
                   np.cos(psi_rad))
-    
+
     # geometric factors associated with extinction and scattering
     chi_s, chi_o, frho, ftau = _volscatt(sin_tts, cos_tts, sin_tto, cos_tto,
                                          psi_rad, sin_ttli, cos_ttli)
@@ -119,7 +116,7 @@ def SAILH(soil, leafopt, canopy, angles):
         # From APPENDIX IV of original matlab code
         if dso != 0:
             alpha = (dso / q) * 2 / (k + K)
-            pso = np.exp((K + k) * LAI * x + np.sqrt(K * k) * LAI / alpha * 
+            pso = np.exp((K + k) * LAI * x + np.sqrt(K * k) * LAI / alpha *
                          (1 - np.exp(x * alpha)))
         else:
             pso = np.exp((K + k) * LAI * x - np.sqrt(K * k) * LAI * x)
@@ -150,21 +147,21 @@ def SAILH(soil, leafopt, canopy, angles):
     def calcJ1(x, m, k, LAI):
         # For getting numerically stable solutions
         J1 = np.zeros((len(m), 1))
-        sing = np.abs((m -k) * LAI) < 1e-6
+        sing = np.abs((m - k) * LAI) < 1e-6
 
         CS = np.where(sing)
         CN = np.where(~sing)
 
-        J1[CN] = (np.exp(m[CN] * LAI * x) - np.exp(k * LAI * x)) / (k - m[CN]) 
+        J1[CN] = (np.exp(m[CN] * LAI * x) - np.exp(k * LAI * x)) / (k - m[CN])
         J1[CS] = -0.5 * (np.exp(m[CS] * LAI * x) + np.exp(k * LAI * x)) * LAI \
-                * x * (1 - 1/12 * (k -m[CS]) ** 2 * LAI ** 2)
+            * x * (1 - 1/12 * (k - m[CS]) ** 2 * LAI ** 2)
         return J1
 
     def calcJ2(x, m, k, LAI):
         # For getting numerically stable solutions
         J2 = (np.exp(k * LAI * x) - np.exp(-k * LAI) * np.exp(-m * LAI *
                                                               (1 + x))
-             ) / (k + m)
+              ) / (k + m)
         return J2
 
     # direct solar radiation
@@ -178,7 +175,7 @@ def SAILH(soil, leafopt, canopy, angles):
     re = rinf * e1
 
     denom = 1 - rinf2 ** 2
-    
+
     s1 = sf + rinf * sb
     s2 = sf * rinf + sb
     v1 = vf + rinf * vb
@@ -201,7 +198,7 @@ def SAILH(soil, leafopt, canopy, angles):
     rho_do = (Qoo - re * Poo) / denom
 
     T1 = v2 * s1 * (Z - J1k * tau_oo) / (K + m) + v1 * s2 * (Z - J1K * tau_ss)\
-            / (k + m)
+        / (k + m)
     T2 = -(Qoo * rho_sd + Poo * tau_sd) * rinf
     rho_sod = (T1 + T2) / (1 - rinf2)
 
@@ -215,7 +212,7 @@ def SAILH(soil, leafopt, canopy, angles):
 
     rso = rho_so + rs * Pso2w + (
         (tau_sd + tau_ss * rs * rho_dd) * tau_oo + (tau_sd + tau_ss) * tau_do)\
-            * rs / denom
+        * rs / denom
     rdo = rho_do + (tau_oo + tau_do) * rs * tau_dd / denom
     rsd = rho_sd + (tau_ss + tau_sd) * rs * tau_dd / denom
     rdd = rho_dd + tau_dd * rs * tau_dd / denom
@@ -223,7 +220,7 @@ def SAILH(soil, leafopt, canopy, angles):
     rad = CanopyReflectances(rso, rdo, rsd, rdd)
 
     return rad
-    
+
 
 class CanopyReflectances:
     """CanopyReflectances"""
@@ -232,7 +229,7 @@ class CanopyReflectances:
     Parameters
     ----------
     rso : np.array
-        Bidirectional reflectance of the canopy        
+        Bidirectional reflectance of the canopy
     rdo : np.array
         Directional reflectance for diffuse incidence of the canopy
     rsd : np.array
@@ -243,7 +240,7 @@ class CanopyReflectances:
     Attributes
     ----------
     rso : np.array
-        Bidirectional reflectance of the canopy        
+        Bidirectional reflectance of the canopy
     rdo : np.array
         Directional reflectance for diffuse incidence of the canopy
     rsd : np.array
@@ -256,7 +253,7 @@ class CanopyReflectances:
         self.rdo = rdo
         self.rsd = rsd
         self.rdd = rdd
-        
+
 
 class Angles:
     """Class to hold solar zenith, observation zenith, and relative azimuth
@@ -271,7 +268,7 @@ class Angles:
     rel_angle : float
         Relative azimuth angle, degrees
 
-    Attributes 
+    Attributes
     ----------
     sol_angle : float
         Solar zenith angle, degrees
@@ -367,7 +364,7 @@ def calculate_leafangles(LIDFa, LIDFb):
         return f
 
     # F sized to 14 entries so diff for actual LIDF becomes 13 entries
-    F = np.zeros((14, 1))  
+    F = np.zeros((14, 1))
     for i in range(1, 9):
         theta = i * 10
         F[i] = dcum(LIDFa, LIDFb, theta)
@@ -400,7 +397,6 @@ def _volscatt(sin_tts, cos_tts, sin_tto, cos_tto, psi_rad, sin_ttli, cos_ttli):
 
     bts = np.arccos(-Cs / As)
     bto = np.arccos(-Co / Ao)
-
 
     chi_o = 2 / np.pi * ((bto - np.pi / 2) * Co + np.sin(bto) * So)
     chi_s = 2 / np.pi * ((bts - np.pi / 2) * Cs + np.sin(bts) * Ss)
