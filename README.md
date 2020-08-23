@@ -12,6 +12,7 @@ The SPART model: A soil-plant-atmosphere radiative transfer model for satellite 
 Python 3.4+
 NumPy
 SciPy
+Pandas
 
 ## Quickstart Example
 '''
@@ -22,7 +23,7 @@ SciPy
     atm = AtmosphericProperties(0.3246, 0.3480, 1.4116, 1013.25)
     spart = SPART(soilpar, leafbio, canopy, atm, angles, 'TerraAqua-MODIS',
                   100)
-    L_TOA, R_TOA, R_TOC = spart.run()
+    results = spart.run()  # Pandas DataFrame containing R_TOC, R_TOA, L_TOA
 '''
 
 ## Documentation

@@ -21,7 +21,8 @@ def BSM(soilpar, soilspec):
     Parameters
     ----------
     soilpar : SoilParameters
-        Object with attributes B, lat, lon, and SMp, SMC, film
+        Object with attributes [B, lat, lon] / dry soil spectra, and SMp, SMC,
+        film
     soilspec : dict
         Contains keys ['GSV', 'kw', 'nw'] which key the Global Soil Vectors,
         water absorption constants for the spectrum and water refraction index

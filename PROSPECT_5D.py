@@ -20,6 +20,8 @@ class LeafBiology:
         Chlorophyll concentration, micro g / cm ^ 2
     Cca : float
         Carotenoid concentration, micro g / cm ^ 2
+    Cw : float
+        Equivalent water thickness, cm
     Cdm : float
         Leaf mass per unit area, g / cm ^ 2
     Cs : float
@@ -40,7 +42,7 @@ class LeafBiology:
     Cdm : float
         Leaf mass per unit area, g / cm ^ 2
     Cs : float
-        Brown pigments (from SPART paper, unitless)
+        Fraction senescent material (brown pigment from SPART paper, unitless)
     Cant : float
         Anthocyanin content, micro g / cm ^ 2
     N : float
@@ -200,7 +202,7 @@ def PROSPECT_5D(leafbio, optical_params):
 
 def calculate_tav(alpha, nr):
     """
-    Calculate average transmissitivity of a dieletric plant surface.
+    Calculate average transmissitivity of a dieletrie plane surface.
 
     Parameters
     ----------
