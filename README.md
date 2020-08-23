@@ -15,7 +15,7 @@ SciPy
 Pandas
 
 ## Quickstart Example
-'''
+```
     leafbio = LeafBiology(40, 10, 0.02, 0.01, 0, 10, 1.5)
     soilpar = SoilParameters(0.5, 0, 100, 15)
     canopy = CanopyStructure(3, -0.35, -0.15, 0.05)
@@ -24,7 +24,7 @@ Pandas
     spart = SPART(soilpar, leafbio, canopy, atm, angles, 'TerraAqua-MODIS',
                   100)
     results = spart.run()  # Pandas DataFrame containing R_TOC, R_TOA, L_TOA
-'''
+```
 
 ## Documentation
 Detailed dostrings in every script including parameters and units. Documentaiton to follow.
