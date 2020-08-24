@@ -21,10 +21,10 @@ import pickle
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from BSM import BSM, SoilParameters
-from PROSPECT_5D import PROSPECT_5D, LeafBiology
-from SAILH import SAILH, CanopyStructure, Angles
-from SMAC import SMAC, AtmosphericProperties
+from .BSM import BSM, SoilParameters
+from .PROSPECT_5D import PROSPECT_5D, LeafBiology
+from .SAILH import SAILH, CanopyStructure, Angles
+from .SMAC import SMAC, AtmosphericProperties
 
 # TODO: look at threading BSM and PROSPECT as they don't require each
 # other

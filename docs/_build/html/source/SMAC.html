@@ -1,0 +1,315 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SMAC module &#8212; SPART-python 1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-SMAC">
+<span id="smac-module"></span><h1>SMAC module<a class="headerlink" href="#module-SMAC" title="Permalink to this headline">¶</a></h1>
+<p>SMAC model.</p>
+<p>Library for atmospheric correction using SMAC method (Rahman and Dedieu, 1994)
+Original translated and improved by:
+Peiqi Yang, ITC, University of Twente</p>
+<p>Adapted to Python by:
+George Worrall, CRS, University of Florida</p>
+<dl class="py class">
+<dt id="SMAC.AtmosphericOptics">
+<em class="property">class </em><code class="sig-prename descclassname">SMAC.</code><code class="sig-name descname">AtmosphericOptics</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">Ta_s</span></em>, <em class="sig-param"><span class="n">Ta_o</span></em>, <em class="sig-param"><span class="n">Tg</span></em>, <em class="sig-param"><span class="n">Ra_dd</span></em>, <em class="sig-param"><span class="n">Ra_so</span></em>, <em class="sig-param"><span class="n">Ta_ss</span></em>, <em class="sig-param"><span class="n">Ta_sd</span></em>, <em class="sig-param"><span class="n">Ta_oo</span></em>, <em class="sig-param"><span class="n">Ta_do</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SMAC.AtmosphericOptics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class to hold atmospheric optics results from the SMAC model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Ta_s</strong> (<em>np.array</em>) – Total scattering transmission downard</p></li>
+<li><p><strong>Ta_o</strong> (<em>np.array</em>) – Total scattering transmission upward</p></li>
+<li><p><strong>Tg</strong> (<em>np.array</em>) – Transmittance for all gases</p></li>
+<li><p><strong>Ra_dd</strong> (<em>np.array</em>) – Hemispherical atmospheric reflectance for diffuse light</p></li>
+<li><p><strong>Ra_so</strong> (<em>np.array</em>) – Directional atmospheric reflectance for direct incidence</p></li>
+<li><p><strong>Ta_ss</strong> (<em>np.array</em>) – Directional transmittance for direct incidence</p></li>
+<li><p><strong>Ta_sd</strong> (<em>np.array</em>) – Hemispherical transmittance for direct incidence</p></li>
+<li><p><strong>Ta_oo</strong> (<em>np.array</em>) – Directional transmittance for direct incidence (in viewing direction)</p></li>
+<li><p><strong>Ta_do</strong> (<em>np.array</em>) – Hemispherical transmittance for direct incidence (in viewing direction)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt id="SMAC.AtmosphericOptics.Ta_s">
+<code class="sig-name descname">Ta_s</code><a class="headerlink" href="#SMAC.AtmosphericOptics.Ta_s" title="Permalink to this definition">¶</a></dt>
+<dd><p>Total scattering transmission downard</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SMAC.AtmosphericOptics.Ta_o">
+<code class="sig-name descname">Ta_o</code><a class="headerlink" href="#SMAC.AtmosphericOptics.Ta_o" title="Permalink to this definition">¶</a></dt>
+<dd><p>Total scattering transmission upward</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SMAC.AtmosphericOptics.Tg">
+<code class="sig-name descname">Tg</code><a class="headerlink" href="#SMAC.AtmosphericOptics.Tg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transmittance for all gases</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SMAC.AtmosphericOptics.Ra_dd">
+<code class="sig-name descname">Ra_dd</code><a class="headerlink" href="#SMAC.AtmosphericOptics.Ra_dd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hemispherical atmospheric reflectance for diffuse light</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SMAC.AtmosphericOptics.Ra_so">
+<code class="sig-name descname">Ra_so</code><a class="headerlink" href="#SMAC.AtmosphericOptics.Ra_so" title="Permalink to this definition">¶</a></dt>
+<dd><p>Directional atmospheric reflectance for direct incidence</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SMAC.AtmosphericOptics.Ta_ss">
+<code class="sig-name descname">Ta_ss</code><a class="headerlink" href="#SMAC.AtmosphericOptics.Ta_ss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Directional transmittance for direct incidence</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SMAC.AtmosphericOptics.Ta_sd">
+<code class="sig-name descname">Ta_sd</code><a class="headerlink" href="#SMAC.AtmosphericOptics.Ta_sd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hemispherical transmittance for direct incidence</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SMAC.AtmosphericOptics.Ta_oo">
+<code class="sig-name descname">Ta_oo</code><a class="headerlink" href="#SMAC.AtmosphericOptics.Ta_oo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Directional transmittance for direct incidence (in viewing direction)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SMAC.AtmosphericOptics.Ta_do">
+<code class="sig-name descname">Ta_do</code><a class="headerlink" href="#SMAC.AtmosphericOptics.Ta_do" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hemispherical transmittance for direct incidence (in viewing direction)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="SMAC.AtmosphericProperties">
+<em class="property">class </em><code class="sig-prename descclassname">SMAC.</code><code class="sig-name descname">AtmosphericProperties</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">aot550</span></em>, <em class="sig-param"><span class="n">uo3</span></em>, <em class="sig-param"><span class="n">uh2o</span></em>, <em class="sig-param"><span class="n">Pa</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">alt_m</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">temp_k</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SMAC.AtmosphericProperties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class to hold the properties of the atmosphere used in SMAC calculations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>aot550</strong> (<em>float</em>) – Aerosol optical thickness at 550 nm</p></li>
+<li><p><strong>uo3</strong> (<em>float</em>) – Ozone content, cm-atm</p></li>
+<li><p><strong>uh2o</strong> (<em>float</em>) – Water vapour content, g cm^-2</p></li>
+<li><p><strong>Pa</strong> (<em>float</em><em>, </em><em>optional</em>) – Air pressure, hPa, defaults to 1013.25</p></li>
+<li><p><strong>alt_m</strong> (<em>int</em><em>, </em><em>optional</em>) – Altitude of observation site, used to calculate air pressure if air
+pressure not known.</p></li>
+<li><p><strong>temp_k</strong> (<em>float</em><em>, </em><em>optional</em>) – Temperature in kelvin used to estimate air pressure</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt id="SMAC.AtmosphericProperties.aot550">
+<code class="sig-name descname">aot550</code><a class="headerlink" href="#SMAC.AtmosphericProperties.aot550" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aerosol optical thickness at 550 nm</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SMAC.AtmosphericProperties.uO3">
+<code class="sig-name descname">uO3</code><a class="headerlink" href="#SMAC.AtmosphericProperties.uO3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ozone content, cm-atm</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SMAC.AtmosphericProperties.uh20">
+<code class="sig-name descname">uh20</code><a class="headerlink" href="#SMAC.AtmosphericProperties.uh20" title="Permalink to this definition">¶</a></dt>
+<dd><p>Water vapour content, g cm^-2</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SMAC.AtmosphericProperties.Pa">
+<code class="sig-name descname">Pa</code><a class="headerlink" href="#SMAC.AtmosphericProperties.Pa" title="Permalink to this definition">¶</a></dt>
+<dd><p>Air pressure, hPa</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="SMAC.SMAC">
+<code class="sig-prename descclassname">SMAC.</code><code class="sig-name descname">SMAC</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">angles</span></em>, <em class="sig-param"><span class="n">atm</span></em>, <em class="sig-param"><span class="n">coefs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SMAC.SMAC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the SMAC atmosphere model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>angles</strong> (<a class="reference internal" href="SAILH.html#SAILH.Angles" title="SAILH.Angles"><em>SAILH.Angles</em></a>) – Contains solar zenith, observational zentiy, and relative difference of
+azimuth angles in degrees.</p></li>
+<li><p><strong>atm</strong> (<a class="reference internal" href="#SMAC.AtmosphericProperties" title="SMAC.AtmosphericProperties"><em>AtmosphericProperties</em></a>) – Contains the atmospheric properties for the model.</p></li>
+<li><p><strong>coefs</strong> (<em>dict</em>) – Contains all the transmittance coefficients for different atmospheric
+gases at the wavelengths of the specified sensor.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Contains atmospheric reflectance and transmittance arrays</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#SMAC.AtmosphericOptics" title="SMAC.AtmosphericOptics">AtmosphericOptics</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">SPART-python</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/source/SMAC.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

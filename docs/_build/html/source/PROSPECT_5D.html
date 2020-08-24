@@ -1,0 +1,330 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PROSPECT_5D module &#8212; SPART-python 1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-PROSPECT_5D">
+<span id="prospect-5d-module"></span><h1>PROSPECT_5D module<a class="headerlink" href="#module-PROSPECT_5D" title="Permalink to this headline">¶</a></h1>
+<p>SPART-python</p>
+<p>PROSPECT 5D model.</p>
+<dl class="simple">
+<dt>Feret et al. - PROSPECT-D: Towards modeling leaf optical properties</dt><dd><p>through a complete lifecycle</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt id="PROSPECT_5D.LeafBiology">
+<em class="property">class </em><code class="sig-prename descclassname">PROSPECT_5D.</code><code class="sig-name descname">LeafBiology</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">Cab</span></em>, <em class="sig-param"><span class="n">Cca</span></em>, <em class="sig-param"><span class="n">Cw</span></em>, <em class="sig-param"><span class="n">Cdm</span></em>, <em class="sig-param"><span class="n">Cs</span></em>, <em class="sig-param"><span class="n">Cant</span></em>, <em class="sig-param"><span class="n">N</span></em><span class="sig-paren">)</span><a class="headerlink" href="#PROSPECT_5D.LeafBiology" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class to hold leaf biology variables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Cab</strong> (<em>float</em>) – Chlorophyll concentration, micro g / cm ^ 2</p></li>
+<li><p><strong>Cca</strong> (<em>float</em>) – Carotenoid concentration, micro g / cm ^ 2</p></li>
+<li><p><strong>Cw</strong> (<em>float</em>) – Equivalent water thickness, cm</p></li>
+<li><p><strong>Cdm</strong> (<em>float</em>) – Leaf mass per unit area, g / cm ^ 2</p></li>
+<li><p><strong>Cs</strong> (<em>float</em>) – Brown pigments (from SPART paper, unitless)</p></li>
+<li><p><strong>Cant</strong> (<em>float</em>) – Anthocyanin content, micro g / cm ^ 2</p></li>
+<li><p><strong>N</strong> (<em>float</em>) – Leaf structure parameter. Unitless.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt id="PROSPECT_5D.LeafBiology.Cab">
+<code class="sig-name descname">Cab</code><a class="headerlink" href="#PROSPECT_5D.LeafBiology.Cab" title="Permalink to this definition">¶</a></dt>
+<dd><p>Chlorophyll concentration, micro g / cm ^ 2</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="PROSPECT_5D.LeafBiology.Cca">
+<code class="sig-name descname">Cca</code><a class="headerlink" href="#PROSPECT_5D.LeafBiology.Cca" title="Permalink to this definition">¶</a></dt>
+<dd><p>Carotenoid concentration, micro g / cm ^ 2</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="PROSPECT_5D.LeafBiology.Cw">
+<code class="sig-name descname">Cw</code><a class="headerlink" href="#PROSPECT_5D.LeafBiology.Cw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Equivalent water thickness, cm</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="PROSPECT_5D.LeafBiology.Cdm">
+<code class="sig-name descname">Cdm</code><a class="headerlink" href="#PROSPECT_5D.LeafBiology.Cdm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Leaf mass per unit area, g / cm ^ 2</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="PROSPECT_5D.LeafBiology.Cs">
+<code class="sig-name descname">Cs</code><a class="headerlink" href="#PROSPECT_5D.LeafBiology.Cs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fraction senescent material (brown pigment from SPART paper, unitless)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="PROSPECT_5D.LeafBiology.Cant">
+<code class="sig-name descname">Cant</code><a class="headerlink" href="#PROSPECT_5D.LeafBiology.Cant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Anthocyanin content, micro g / cm ^ 2</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="PROSPECT_5D.LeafBiology.N">
+<code class="sig-name descname">N</code><a class="headerlink" href="#PROSPECT_5D.LeafBiology.N" title="Permalink to this definition">¶</a></dt>
+<dd><p>Leaf structure parameter. Unitless.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="PROSPECT_5D.LeafBiology.rho_thermal">
+<code class="sig-name descname">rho_thermal</code><a class="headerlink" href="#PROSPECT_5D.LeafBiology.rho_thermal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reflectance in the thermal range. SPART assumption: 0.01</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="PROSPECT_5D.LeafBiology.tau_thermal">
+<code class="sig-name descname">tau_thermal</code><a class="headerlink" href="#PROSPECT_5D.LeafBiology.tau_thermal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transmittance in the thermal range. SPART assumption: 0.01</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="PROSPECT_5D.LeafOptics">
+<em class="property">class </em><code class="sig-prename descclassname">PROSPECT_5D.</code><code class="sig-name descname">LeafOptics</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">refl</span></em>, <em class="sig-param"><span class="n">tran</span></em>, <em class="sig-param"><span class="n">kChlrel</span></em><span class="sig-paren">)</span><a class="headerlink" href="#PROSPECT_5D.LeafOptics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class to hold leaf optics information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>refl</strong> (<em>np.array</em>) – Spectral reflectance of the leaf, 400 to 2400 nm</p></li>
+<li><p><strong>tran</strong> (<em>np.array</em>) – Spectral transmittance of the leaf, 400 to 2400 nm</p></li>
+<li><p><strong>kChlrel</strong> (<em>np.array</em>) – Relative portion of chlorophyll contribution to reflecntace
+/ transmittance in the spectral range, 400 to 2400 nm</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt id="PROSPECT_5D.LeafOptics.refl">
+<code class="sig-name descname">refl</code><a class="headerlink" href="#PROSPECT_5D.LeafOptics.refl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Spectral reflectance of the leaf, 400 to 2400 nm</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="PROSPECT_5D.LeafOptics.tran">
+<code class="sig-name descname">tran</code><a class="headerlink" href="#PROSPECT_5D.LeafOptics.tran" title="Permalink to this definition">¶</a></dt>
+<dd><p>Spectral transmittance of the leaf, 400 to 2400 nm</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="PROSPECT_5D.LeafOptics.kChlrel">
+<code class="sig-name descname">kChlrel</code><a class="headerlink" href="#PROSPECT_5D.LeafOptics.kChlrel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Relative portion of chlorophyll contribution to reflecntace
+/ transmittance in the spectral range, 400 to 2400 nm</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="PROSPECT_5D.PROSPECT_5D">
+<code class="sig-prename descclassname">PROSPECT_5D.</code><code class="sig-name descname">PROSPECT_5D</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">leafbio</span></em>, <em class="sig-param"><span class="n">optical_params</span></em><span class="sig-paren">)</span><a class="headerlink" href="#PROSPECT_5D.PROSPECT_5D" title="Permalink to this definition">¶</a></dt>
+<dd><p>PROSPECT_5D model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>leafbio</strong> (<a class="reference internal" href="#PROSPECT_5D.LeafBiology" title="PROSPECT_5D.LeafBiology"><em>LeafBiology</em></a>) – Object holding user specified leaf biology model parameters.</p></li>
+<li><p><strong>optical_params</strong> (<em>dict</em>) – Optical parameter constants. Loaded externally and passed in.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Contains attributes relf, tran, kChlrel for reflectance, transmittance
+and contribution of chlorophyll over the 400 nm to 2400 nm spectrum</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#PROSPECT_5D.LeafOptics" title="PROSPECT_5D.LeafOptics">LeafOptics</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="PROSPECT_5D.calculate_tav">
+<code class="sig-prename descclassname">PROSPECT_5D.</code><code class="sig-name descname">calculate_tav</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">alpha</span></em>, <em class="sig-param"><span class="n">nr</span></em><span class="sig-paren">)</span><a class="headerlink" href="#PROSPECT_5D.calculate_tav" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate average transmissitivity of a dieletrie plane surface.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>alpha</strong> (<em>float</em>) – Maximum incidence angle defining the solid angle.</p></li>
+<li><p><strong>nr</strong> (<em>float</em>) – Refractive index</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Transmissivity of a dielectric plane surface averages over all
+directions of incidence and all polarizations.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Lifted directly from original SPART matlab calculations.
+Papers cited in original PROSPECT model:</p>
+<blockquote>
+<div><p>Willstatter-Stoll Theory of Leaf Reflectance Evaluated
+by Ray Tracinga - Allen et al.
+Transmission of isotropic radiation across an interface
+between two dielectrics - Stern</p>
+</div></blockquote>
+</div>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">SPART-python</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/source/PROSPECT_5D.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

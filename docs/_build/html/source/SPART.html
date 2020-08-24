@@ -1,0 +1,476 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SPART module &#8212; SPART-python 1.0 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-SPART">
+<span id="spart-module"></span><h1>SPART module<a class="headerlink" href="#module-SPART" title="Permalink to this headline">¶</a></h1>
+<p>Soil-Plant-Atmosphere Radiative Transfer model
+for top-of-canopy and top-of-atmosphere reflectance</p>
+<p>Coupling BSM, PROSAIL and SMAC to simulate TOA reflectance</p>
+<p>Python port coded by George Worrall (<a class="reference external" href="mailto:gworrall&#37;&#52;&#48;ufl&#46;edu">gworrall<span>&#64;</span>ufl<span>&#46;</span>edu</a>)
+Center for Remote Sensing, University of Florida</p>
+<p>Ported to Python from the original matlab code and model developed by:</p>
+<p>Peiqi Yang               (<a class="reference external" href="mailto:p&#46;yang&#37;&#52;&#48;utwente&#46;nl">p<span>&#46;</span>yang<span>&#64;</span>utwente<span>&#46;</span>nl</a>)
+Christiaan van der Tol   (<a class="reference external" href="mailto:c&#46;vandertol&#37;&#52;&#48;utwente&#46;nl">c<span>&#46;</span>vandertol<span>&#64;</span>utwente<span>&#46;</span>nl</a>)
+Wout Verhoef             (<a class="reference external" href="mailto:w&#46;verhoef&#37;&#52;&#48;utwente&#46;nl">w<span>&#46;</span>verhoef<span>&#64;</span>utwente<span>&#46;</span>nl</a>)</p>
+<p>University of Twente
+Faculty of Geo-Information Science and Earth Observation (ITC),
+Department of Water Resources</p>
+<dl class="py class">
+<dt id="SPART.SPART">
+<em class="property">class </em><code class="sig-prename descclassname">SPART.</code><code class="sig-name descname">SPART</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">soilpar</span></em>, <em class="sig-param"><span class="n">leafbio</span></em>, <em class="sig-param"><span class="n">canopy</span></em>, <em class="sig-param"><span class="n">atm</span></em>, <em class="sig-param"><span class="n">angles</span></em>, <em class="sig-param"><span class="n">sensor</span></em>, <em class="sig-param"><span class="n">DOY</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SPART.SPART" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>SPART model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>soilpar</strong> (<a class="reference internal" href="BSM.html#BSM.SoilParameters" title="BSM.SoilParameters"><em>SoilParameters</em></a>) – Holds the soil parameters for the BSM model.</p></li>
+<li><p><strong>leafbio</strong> (<a class="reference internal" href="PROSPECT_5D.html#PROSPECT_5D.LeafBiology" title="PROSPECT_5D.LeafBiology"><em>LeafBiology</em></a>) – Hold the leaf biology parameters for the PROSPECT model.</p></li>
+<li><p><strong>canopy</strong> (<a class="reference internal" href="SAILH.html#SAILH.CanopyStructure" title="SAILH.CanopyStructure"><em>CanopyStructure</em></a>) – Holds the canopy parameters for the SAILH model.</p></li>
+<li><p><strong>atm</strong> (<a class="reference internal" href="SMAC.html#SMAC.AtmosphericProperties" title="SMAC.AtmosphericProperties"><em>AtmosphericProperties</em></a>) – Holds the atmospheric properties for the SMAC model.</p></li>
+<li><p><strong>sensor</strong> (<em>str</em>) – Name of RS platform to simulate. This is done after the SAIL stage and
+saves on atmospheric diffuse reflectance calculations for TOC and
+atmospheric correction calculations for TOA.
+Currently available:
+‘TerraAqua-MODIS’
+‘LANDSAT4-TM’
+‘LANDSAT5-TM’
+‘LANDSAT7-ETM’
+‘LANDSAT8-OLI’
+‘Sentinel3A-OLCI’
+‘Sentinel3B-OLCI’</p></li>
+<li><p><strong>DOY</strong> (<em>int</em>) – Day of the year - Julian calendar</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt id="SPART.SPART.soilopt">
+<code class="sig-name descname">soilopt</code><a class="headerlink" href="#SPART.SPART.soilopt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains soil reflectances</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="BSM.html#BSM.SoilOptics" title="BSM.SoilOptics">BSM.SoilOptics</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SPART.SPART.leafopt">
+<code class="sig-name descname">leafopt</code><a class="headerlink" href="#SPART.SPART.leafopt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains leaf reflectance and transmittance and fraction contributed
+by chlorphyll</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="PROSPECT_5D.html#PROSPECT_5D.LeafOptics" title="PROSPECT_5D.LeafOptics">PROSPECT_5D.LeafOptics</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SPART.SPART.canopyopt">
+<code class="sig-name descname">canopyopt</code><a class="headerlink" href="#SPART.SPART.canopyopt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains bidrectional and directional, diffuce and specular reflectance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="SAILH.html#SAILH.CanopyReflectances" title="SAILH.CanopyReflectances">SAILH.CanopyReflectances</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SPART.SPART.R_TOC">
+<code class="sig-name descname">R_TOC</code><a class="headerlink" href="#SPART.SPART.R_TOC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Top of canopy reflectance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SPART.SPART.R_TOA">
+<code class="sig-name descname">R_TOA</code><a class="headerlink" href="#SPART.SPART.R_TOA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Top of atmosphere reflectance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SPART.SPART.L_TOA">
+<code class="sig-name descname">L_TOA</code><a class="headerlink" href="#SPART.SPART.L_TOA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Top of atmosphere radiance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="SPART.SPART.DOY">
+<em class="property">property </em><code class="sig-name descname">DOY</code><a class="headerlink" href="#SPART.SPART.DOY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="SPART.SPART.angles">
+<em class="property">property </em><code class="sig-name descname">angles</code><a class="headerlink" href="#SPART.SPART.angles" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="SPART.SPART.atm">
+<em class="property">property </em><code class="sig-name descname">atm</code><a class="headerlink" href="#SPART.SPART.atm" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="SPART.SPART.canopy">
+<em class="property">property </em><code class="sig-name descname">canopy</code><a class="headerlink" href="#SPART.SPART.canopy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="SPART.SPART.leafbio">
+<em class="property">property </em><code class="sig-name descname">leafbio</code><a class="headerlink" href="#SPART.SPART.leafbio" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="SPART.SPART.run">
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SPART.SPART.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the SPART model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Contains the radiances and reflectances columns ‘Band’ ‘L_TOA’
+‘R_TOA’ ‘R_TOC’ index by central band wavelength</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="SPART.SPART.sensor">
+<em class="property">property </em><code class="sig-name descname">sensor</code><a class="headerlink" href="#SPART.SPART.sensor" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="SPART.SPART.set_refl_trans_assumptions">
+<code class="sig-name descname">set_refl_trans_assumptions</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SPART.SPART.set_refl_trans_assumptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the model assumptions about soil and leaf reflectance and
+transmittance in the thermal range.</p>
+<p>These are that soil reflectance is the value for 2400 nm
+in the entire thermal range and that leaf relctance and
+transmittance are 0.01 in the thermal range (this is
+a model assumption that is set in the LeafBiology class in the BSM
+script)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="SPART.SPART.soilpar">
+<em class="property">property </em><code class="sig-name descname">soilpar</code><a class="headerlink" href="#SPART.SPART.soilpar" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="SPART.SpectralBands">
+<em class="property">class </em><code class="sig-prename descclassname">SPART.</code><code class="sig-name descname">SpectralBands</code><a class="headerlink" href="#SPART.SpectralBands" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class to hold definitions of spectral band ranges and wavelengths.</p>
+<dl class="py attribute">
+<dt id="SPART.SpectralBands.wlP">
+<code class="sig-name descname">wlP</code><a class="headerlink" href="#SPART.SpectralBands.wlP" title="Permalink to this definition">¶</a></dt>
+<dd><p>Range of wavelengths over which the PROSPECT model operates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SPART.SpectralBands.wlE">
+<code class="sig-name descname">wlE</code><a class="headerlink" href="#SPART.SpectralBands.wlE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Range of wavelengths in E-F excitation matrix</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SPART.SpectralBands.wlF">
+<code class="sig-name descname">wlF</code><a class="headerlink" href="#SPART.SpectralBands.wlF" title="Permalink to this definition">¶</a></dt>
+<dd><p>Range of wavelengths for chlorophyll fluorescence in E-F matrix</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SPART.SpectralBands.wlO">
+<code class="sig-name descname">wlO</code><a class="headerlink" href="#SPART.SpectralBands.wlO" title="Permalink to this definition">¶</a></dt>
+<dd><p>Range of wavelengths in the optical part of the spectrum</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SPART.SpectralBands.wlT">
+<code class="sig-name descname">wlT</code><a class="headerlink" href="#SPART.SpectralBands.wlT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Range of wavelengths in the thermal part of the spectrum</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SPART.SpectralBands.wlS">
+<code class="sig-name descname">wlS</code><a class="headerlink" href="#SPART.SpectralBands.wlS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Range of wavelengths for the solar spectrum. wlO and wlT combined.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SPART.SpectralBands.wlPAR">
+<code class="sig-name descname">wlPAR</code><a class="headerlink" href="#SPART.SpectralBands.wlPAR" title="Permalink to this definition">¶</a></dt>
+<dd><p>Range of wavelengths for photosynthetically active radiation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SPART.SpectralBands.nwlP">
+<code class="sig-name descname">nwlP</code><a class="headerlink" href="#SPART.SpectralBands.nwlP" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of optical bands</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SPART.SpectralBands.nwlT">
+<code class="sig-name descname">nwlT</code><a class="headerlink" href="#SPART.SpectralBands.nwlT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of thermal bands</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SPART.SpectralBands.IwlP">
+<code class="sig-name descname">IwlP</code><a class="headerlink" href="#SPART.SpectralBands.IwlP" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of optical bands</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>range</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="SPART.SpectralBands.IwlT">
+<code class="sig-name descname">IwlT</code><a class="headerlink" href="#SPART.SpectralBands.IwlT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of thermal bands</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>range</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="SPART.calculate_ET_radiance">
+<code class="sig-prename descclassname">SPART.</code><code class="sig-name descname">calculate_ET_radiance</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">Ea</span></em>, <em class="sig-param"><span class="n">DOY</span></em>, <em class="sig-param"><span class="n">tts</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SPART.calculate_ET_radiance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate extraterrestrial radiation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Ea</strong> (<em>float</em>) – Solar constant for spectral irradiance</p></li>
+<li><p><strong>DOY</strong> (<em>int</em>) – Day of year, Julian calendar</p></li>
+<li><p><strong>tts</strong> (<em>float</em>) – Solar zenith angle in degrees</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Solar extraterrestrial spectrum</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<dl class="simple">
+<dt>see: <a class="reference external" href="https://www.sciencedirect.com/topics/engineering/">https://www.sciencedirect.com/topics/engineering/</a></dt><dd><p>extraterrestrial-radiation</p>
+</dd>
+</dl>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt id="SPART.calculate_spectral_convolution">
+<code class="sig-prename descclassname">SPART.</code><code class="sig-name descname">calculate_spectral_convolution</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">wl_hi</span></em>, <em class="sig-param"><span class="n">radiation_spectra</span></em>, <em class="sig-param"><span class="n">sensorinfo</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SPART.calculate_spectral_convolution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the spectral convolution for a given spectral response function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>wl_hi</strong> (<em>np.array</em>) – Arrays of wavelengths to be convolved</p></li>
+<li><p><strong>radiation_spectra</strong> (<em>np.array</em>) – irradiance or radiance to be convolved</p></li>
+<li><p><strong>sensorinfo</strong> (<em>dict</em>) – Contains keys ‘wl_srf’ -&gt; number of bands contrib * number of bands
+post con
+‘p_srf’ -&gt; relative contribution of each band</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Convolution result</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="SPART.load_ET_parameters">
+<code class="sig-prename descclassname">SPART.</code><code class="sig-name descname">load_ET_parameters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SPART.load_ET_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load extratrerrestrial parameters from saved arrays</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="SPART.load_optical_parameters">
+<code class="sig-prename descclassname">SPART.</code><code class="sig-name descname">load_optical_parameters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SPART.load_optical_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load optical parameters from saved arrays</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="SPART.load_sensor_info">
+<code class="sig-prename descclassname">SPART.</code><code class="sig-name descname">load_sensor_info</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sensor</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SPART.load_sensor_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load RS sensor information from saved arrays</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">SPART-python</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/source/SPART.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

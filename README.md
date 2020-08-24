@@ -10,10 +10,12 @@ The model paper is:
 The SPART model: A soil-plant-atmosphere radiative transfer model for satellite measurements in the solar spectrum - Yang et al. (2020)
 
 ## Requirements
+```
 Python 3.4+
 NumPy
 SciPy
 Pandas
+```
 
 ## Quickstart Example
 ```
