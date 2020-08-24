@@ -9,6 +9,9 @@ The original code can be found at: https://github.com/peiqiyang/SPART
 The model paper is:
 The SPART model: A soil-plant-atmosphere radiative transfer model for satellite measurements in the solar spectrum - Yang et al. (2020)
 
+## Installation
+`pip install SPART-python`
+
 ## Requirements
 ```
 Python 3.4+
@@ -31,4 +34,4 @@ Pandas
 ```
 
 ## Documentation
-Documentation
+Full documentation can be found at https://spart-python.readthedocs.io/
