@@ -5,7 +5,7 @@
 
 SPART-python
 ============
-SPART-Python is a Python implementation of the Soil-Plant-Atmosphere Radiative Transfer (SPART) model.
+SPART-python is a Python implementation of the Soil-Plant-Atmosphere Radiative Transfer (SPART) model.
 
 This code is based on the original matlab code found at https://github.com/peiqiyang/SPART.
 
