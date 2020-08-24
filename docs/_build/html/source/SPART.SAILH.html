@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SAILH module &#8212; SPART-python 1.0 documentation</title>
+    <title>SPART.SAILH module &#8212; SPART-python 1.0.2 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -15,6 +15,8 @@
     <script src="../_static/language_data.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="SPART.SMAC module" href="SPART.SMAC.html" />
+    <link rel="prev" title="SPART.PROSPECT_5D module" href="SPART.PROSPECT_5D.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -31,8 +33,8 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="module-SAILH">
-<span id="sailh-module"></span><h1>SAILH module<a class="headerlink" href="#module-SAILH" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-SPART.SAILH">
+<span id="spart-sailh-module"></span><h1>SPART.SAILH module<a class="headerlink" href="#module-SPART.SAILH" title="Permalink to this headline">¶</a></h1>
 <p>SAILH Canopy model.</p>
 <p>Ported from the original SPART matlab code.</p>
 <dl class="simple">
@@ -45,8 +47,8 @@
 </dd>
 </dl>
 <dl class="py class">
-<dt id="SAILH.Angles">
-<em class="property">class </em><code class="sig-prename descclassname">SAILH.</code><code class="sig-name descname">Angles</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sol_angle</span></em>, <em class="sig-param"><span class="n">obs_angle</span></em>, <em class="sig-param"><span class="n">rel_angle</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SAILH.Angles" title="Permalink to this definition">¶</a></dt>
+<dt id="SPART.SAILH.Angles">
+<em class="property">class </em><code class="sig-prename descclassname">SPART.SAILH.</code><code class="sig-name descname">Angles</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sol_angle</span></em>, <em class="sig-param"><span class="n">obs_angle</span></em>, <em class="sig-param"><span class="n">rel_angle</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SPART.SAILH.Angles" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Class to hold solar zenith, observation zenith, and relative azimuth
 angles.</p>
@@ -60,8 +62,8 @@ angles.</p>
 </dd>
 </dl>
 <dl class="py attribute">
-<dt id="SAILH.Angles.sol_angle">
-<code class="sig-name descname">sol_angle</code><a class="headerlink" href="#SAILH.Angles.sol_angle" title="Permalink to this definition">¶</a></dt>
+<dt id="SPART.SAILH.Angles.sol_angle">
+<code class="sig-name descname">sol_angle</code><a class="headerlink" href="#SPART.SAILH.Angles.sol_angle" title="Permalink to this definition">¶</a></dt>
 <dd><p>Solar zenith angle, degrees</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -71,8 +73,8 @@ angles.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="SAILH.Angles.obs_angle">
-<code class="sig-name descname">obs_angle</code><a class="headerlink" href="#SAILH.Angles.obs_angle" title="Permalink to this definition">¶</a></dt>
+<dt id="SPART.SAILH.Angles.obs_angle">
+<code class="sig-name descname">obs_angle</code><a class="headerlink" href="#SPART.SAILH.Angles.obs_angle" title="Permalink to this definition">¶</a></dt>
 <dd><p>Observer zenith angle, degrees</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -82,8 +84,8 @@ angles.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="SAILH.Angles.rel_angle">
-<code class="sig-name descname">rel_angle</code><a class="headerlink" href="#SAILH.Angles.rel_angle" title="Permalink to this definition">¶</a></dt>
+<dt id="SPART.SAILH.Angles.rel_angle">
+<code class="sig-name descname">rel_angle</code><a class="headerlink" href="#SPART.SAILH.Angles.rel_angle" title="Permalink to this definition">¶</a></dt>
 <dd><p>Relative azimuth angle, degrees</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -95,14 +97,14 @@ angles.</p>
 </dd></dl>
 
 <dl class="py class">
-<dt id="SAILH.CanopyReflectances">
-<em class="property">class </em><code class="sig-prename descclassname">SAILH.</code><code class="sig-name descname">CanopyReflectances</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rso</span></em>, <em class="sig-param"><span class="n">rdo</span></em>, <em class="sig-param"><span class="n">rsd</span></em>, <em class="sig-param"><span class="n">rdd</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SAILH.CanopyReflectances" title="Permalink to this definition">¶</a></dt>
+<dt id="SPART.SAILH.CanopyReflectances">
+<em class="property">class </em><code class="sig-prename descclassname">SPART.SAILH.</code><code class="sig-name descname">CanopyReflectances</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rso</span></em>, <em class="sig-param"><span class="n">rdo</span></em>, <em class="sig-param"><span class="n">rsd</span></em>, <em class="sig-param"><span class="n">rdd</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SPART.SAILH.CanopyReflectances" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 </dd></dl>
 
 <dl class="py class">
-<dt id="SAILH.CanopyStructure">
-<em class="property">class </em><code class="sig-prename descclassname">SAILH.</code><code class="sig-name descname">CanopyStructure</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">LAI</span></em>, <em class="sig-param"><span class="n">LIDFa</span></em>, <em class="sig-param"><span class="n">LIDFb</span></em>, <em class="sig-param"><span class="n">q</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SAILH.CanopyStructure" title="Permalink to this definition">¶</a></dt>
+<dt id="SPART.SAILH.CanopyStructure">
+<em class="property">class </em><code class="sig-prename descclassname">SPART.SAILH.</code><code class="sig-name descname">CanopyStructure</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">LAI</span></em>, <em class="sig-param"><span class="n">LIDFa</span></em>, <em class="sig-param"><span class="n">LIDFb</span></em>, <em class="sig-param"><span class="n">q</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SPART.SAILH.CanopyStructure" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Class to hold canopy properties. Some are user specified, others are
 SAIL model assumptions.</p>
@@ -117,8 +119,8 @@ SAIL model assumptions.</p>
 </dd>
 </dl>
 <dl class="py attribute">
-<dt id="SAILH.CanopyStructure.LAI">
-<code class="sig-name descname">LAI</code><a class="headerlink" href="#SAILH.CanopyStructure.LAI" title="Permalink to this definition">¶</a></dt>
+<dt id="SPART.SAILH.CanopyStructure.LAI">
+<code class="sig-name descname">LAI</code><a class="headerlink" href="#SPART.SAILH.CanopyStructure.LAI" title="Permalink to this definition">¶</a></dt>
 <dd><p>Leaf area index, 0 to 8</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -128,8 +130,8 @@ SAIL model assumptions.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="SAILH.CanopyStructure.LIDFa">
-<code class="sig-name descname">LIDFa</code><a class="headerlink" href="#SAILH.CanopyStructure.LIDFa" title="Permalink to this definition">¶</a></dt>
+<dt id="SPART.SAILH.CanopyStructure.LIDFa">
+<code class="sig-name descname">LIDFa</code><a class="headerlink" href="#SPART.SAILH.CanopyStructure.LIDFa" title="Permalink to this definition">¶</a></dt>
 <dd><p>Leaf inclination distribution function parameter a, range -1 to 1</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -139,8 +141,8 @@ SAIL model assumptions.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="SAILH.CanopyStructure.LIDFb">
-<code class="sig-name descname">LIDFb</code><a class="headerlink" href="#SAILH.CanopyStructure.LIDFb" title="Permalink to this definition">¶</a></dt>
+<dt id="SPART.SAILH.CanopyStructure.LIDFb">
+<code class="sig-name descname">LIDFb</code><a class="headerlink" href="#SPART.SAILH.CanopyStructure.LIDFb" title="Permalink to this definition">¶</a></dt>
 <dd><p>Leaf inclination distribution function parameter b, range -1 to 1</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -150,8 +152,8 @@ SAIL model assumptions.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="SAILH.CanopyStructure.q">
-<code class="sig-name descname">q</code><a class="headerlink" href="#SAILH.CanopyStructure.q" title="Permalink to this definition">¶</a></dt>
+<dt id="SPART.SAILH.CanopyStructure.q">
+<code class="sig-name descname">q</code><a class="headerlink" href="#SPART.SAILH.CanopyStructure.q" title="Permalink to this definition">¶</a></dt>
 <dd><p>Canopy hotspot parameter: leaf width / canopy height, range 0 to 0.2</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -161,8 +163,8 @@ SAIL model assumptions.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="SAILH.CanopyStructure.nlayers">
-<code class="sig-name descname">nlayers</code><a class="headerlink" href="#SAILH.CanopyStructure.nlayers" title="Permalink to this definition">¶</a></dt>
+<dt id="SPART.SAILH.CanopyStructure.nlayers">
+<code class="sig-name descname">nlayers</code><a class="headerlink" href="#SPART.SAILH.CanopyStructure.nlayers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of layers in canopy, 60 (SAIL assumption)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -172,8 +174,8 @@ SAIL model assumptions.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="SAILH.CanopyStructure.nlincl">
-<code class="sig-name descname">nlincl</code><a class="headerlink" href="#SAILH.CanopyStructure.nlincl" title="Permalink to this definition">¶</a></dt>
+<dt id="SPART.SAILH.CanopyStructure.nlincl">
+<code class="sig-name descname">nlincl</code><a class="headerlink" href="#SPART.SAILH.CanopyStructure.nlincl" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of different leaf inclination angles, 13 (SAIL assumption)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -183,8 +185,8 @@ SAIL model assumptions.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="SAILH.CanopyStructure.nlazi">
-<code class="sig-name descname">nlazi</code><a class="headerlink" href="#SAILH.CanopyStructure.nlazi" title="Permalink to this definition">¶</a></dt>
+<dt id="SPART.SAILH.CanopyStructure.nlazi">
+<code class="sig-name descname">nlazi</code><a class="headerlink" href="#SPART.SAILH.CanopyStructure.nlazi" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of different leaf azimuth angles, 36 (SAIL assumption)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -194,8 +196,8 @@ SAIL model assumptions.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="SAILH.CanopyStructure.lidf">
-<code class="sig-name descname">lidf</code><a class="headerlink" href="#SAILH.CanopyStructure.lidf" title="Permalink to this definition">¶</a></dt>
+<dt id="SPART.SAILH.CanopyStructure.lidf">
+<code class="sig-name descname">lidf</code><a class="headerlink" href="#SPART.SAILH.CanopyStructure.lidf" title="Permalink to this definition">¶</a></dt>
 <dd><p>Leaf inclination distribution function, calculated from LIDF params</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -207,17 +209,17 @@ SAIL model assumptions.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt id="SAILH.SAILH">
-<code class="sig-prename descclassname">SAILH.</code><code class="sig-name descname">SAILH</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">soil</span></em>, <em class="sig-param"><span class="n">leafopt</span></em>, <em class="sig-param"><span class="n">canopy</span></em>, <em class="sig-param"><span class="n">angles</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SAILH.SAILH" title="Permalink to this definition">¶</a></dt>
+<dt id="SPART.SAILH.SAILH">
+<code class="sig-prename descclassname">SPART.SAILH.</code><code class="sig-name descname">SAILH</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">soil</span></em>, <em class="sig-param"><span class="n">leafopt</span></em>, <em class="sig-param"><span class="n">canopy</span></em>, <em class="sig-param"><span class="n">angles</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SPART.SAILH.SAILH" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run the SAILH model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>soil</strong> (<a class="reference internal" href="BSM.html#BSM.SoilOptics" title="BSM.SoilOptics"><em>BSM.SoilOptics</em></a>) – Contains soil reflectance spectra for 400 nm to 2400 nm</p></li>
-<li><p><strong>leafopt</strong> (<a class="reference internal" href="PROSPECT_5D.html#PROSPECT_5D.LeafOptics" title="PROSPECT_5D.LeafOptics"><em>PROSPECT_5D.LeafOptics</em></a>) – Contains leaf reflectance and transmittance spectra, 400 nm to 2400 nm,
+<li><p><strong>soil</strong> (<a class="reference internal" href="SPART.BSM.html#SPART.BSM.SoilOptics" title="SPART.BSM.SoilOptics"><em>BSM.SoilOptics</em></a>) – Contains soil reflectance spectra for 400 nm to 2400 nm</p></li>
+<li><p><strong>leafopt</strong> (<a class="reference internal" href="SPART.PROSPECT_5D.html#SPART.PROSPECT_5D.LeafOptics" title="SPART.PROSPECT_5D.LeafOptics"><em>PROSPECT_5D.LeafOptics</em></a>) – Contains leaf reflectance and transmittance spectra, 400 nm to 2400 nm,
 2500 to 15000 nm, and 16000 to 50000 nm.</p></li>
-<li><p><strong>canopy</strong> (<a class="reference internal" href="#SAILH.CanopyStructure" title="SAILH.CanopyStructure"><em>CanopyStructure</em></a>) – Contains canopy information and SAIL model assumptions</p></li>
-<li><p><strong>angles</strong> (<a class="reference internal" href="#SAILH.Angles" title="SAILH.Angles"><em>Angles</em></a>) – Holds solar zenith, observer zenith, and relative azimuth angles</p></li>
+<li><p><strong>canopy</strong> (<a class="reference internal" href="#SPART.SAILH.CanopyStructure" title="SPART.SAILH.CanopyStructure"><em>CanopyStructure</em></a>) – Contains canopy information and SAIL model assumptions</p></li>
+<li><p><strong>angles</strong> (<a class="reference internal" href="#SPART.SAILH.Angles" title="SPART.SAILH.Angles"><em>Angles</em></a>) – Holds solar zenith, observer zenith, and relative azimuth angles</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -225,14 +227,14 @@ SAIL model assumptions.</p>
 rsd, rdd.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="#SAILH.CanopyReflectances" title="SAILH.CanopyReflectances">CanopyReflectances</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="#SPART.SAILH.CanopyReflectances" title="SPART.SAILH.CanopyReflectances">CanopyReflectances</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt id="SAILH.calculate_leafangles">
-<code class="sig-prename descclassname">SAILH.</code><code class="sig-name descname">calculate_leafangles</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">LIDFa</span></em>, <em class="sig-param"><span class="n">LIDFb</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SAILH.calculate_leafangles" title="Permalink to this definition">¶</a></dt>
+<dt id="SPART.SAILH.calculate_leafangles">
+<code class="sig-prename descclassname">SPART.SAILH.</code><code class="sig-name descname">calculate_leafangles</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">LIDFa</span></em>, <em class="sig-param"><span class="n">LIDFb</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SPART.SAILH.calculate_leafangles" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate the Leaf Inclination Distribution Function as outlined
 by Verhoef in paper cited at the top of this script.</p>
 <dl class="field-list simple">
@@ -270,11 +272,24 @@ by Verhoef in paper cited at the top of this script.</p>
 
 
 <h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">SPART</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="SPART.html">SPART package</a></li>
+</ul>
+</li>
+</ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">SPART</a><ul>
+  <li><a href="SPART.html">SPART package</a><ul>
+      <li>Previous: <a href="SPART.PROSPECT_5D.html" title="previous chapter">SPART.PROSPECT_5D module</a></li>
+      <li>Next: <a href="SPART.SMAC.html" title="next chapter">SPART.SMAC module</a></li>
+  </ul></li>
+  </ul></li>
   </ul></li>
 </ul>
 </div>
@@ -301,14 +316,14 @@ by Verhoef in paper cited at the top of this script.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &copy;.
+      &copy;2020, G. Worrall.
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
-      <a href="../_sources/source/SAILH.rst.txt"
+      <a href="../_sources/source/SPART.SAILH.rst.txt"
           rel="nofollow">Page source</a>
     </div>
 

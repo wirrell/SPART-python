@@ -12,10 +12,10 @@ This code is based on the original matlab code found at https://github.com/peiqi
 The original paper that outlines the SPART model can be found at https://doi.org/10.1016/j.rse.2020.111870
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
    :caption: Contents:
    
-   source/modules.rst
+   source/SPART.rst
 
 
 
