@@ -15,8 +15,6 @@
     <script src="../_static/language_data.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="SPART.PROSPECT_5D module" href="SPART.PROSPECT_5D.html" />
-    <link rel="prev" title="SPART package" href="SPART.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -58,10 +56,10 @@ function.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Containing the relfectance spectrum for the soil, shape = (2001,)</p>
+<dd class="field-even"><p></p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>np.array</p>
+<dd class="field-odd"><p><a class="reference internal" href="#SPART.BSM.SoilOptics" title="SPART.BSM.SoilOptics">SoilOptics</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -204,14 +202,14 @@ spectra</p>
 
 <dl class="py class">
 <dt id="SPART.BSM.SoilParametersFromFile">
-<em class="property">class </em><code class="sig-prename descclassname">SPART.BSM.</code><code class="sig-name descname">SoilParametersFromFile</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file_path</span></em>, <em class="sig-param"><span class="n">SMp</span></em>, <em class="sig-param"><span class="n">SMC</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">film</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SPART.BSM.SoilParametersFromFile" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">SPART.BSM.</code><code class="sig-name descname">SoilParametersFromFile</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">soil_file</span></em>, <em class="sig-param"><span class="n">SMp</span></em>, <em class="sig-param"><span class="n">SMC</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">film</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SPART.BSM.SoilParametersFromFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Class to load and hold soil reflectance spectrum from the JPL soil
 reflectance data available at <a class="reference external" href="https://speclib.jpl.nasa.gov/">https://speclib.jpl.nasa.gov/</a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>file_path</strong> (<em>str</em>) – path to JPL soil reflectance spectra file</p></li>
+<li><p><strong>soil_file</strong> (<em>str</em><em> or </em><em>np.array</em>) – path to JPL soil reflectance spectra file or array containing rdry</p></li>
 <li><p><strong>SMp</strong> (<em>float</em>) – Soil moisture percentage [%]</p></li>
 <li><p><strong>SMC</strong> (<em>float</em><em>, </em><em>optional</em>) – Soil moisture carrying capacity of the soil</p></li>
 <li><p><strong>film</strong> (<em>float</em><em>, </em><em>optional</em>) – Single water film optical thickness, cm</p></li>
@@ -300,23 +298,14 @@ if there is a significant speed bonus to doing so.</p>
 
 <h3>Navigation</h3>
 <p class="caption"><span class="caption-text">Contents:</span></p>
-<ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="modules.html">SPART</a><ul class="current">
-<li class="toctree-l2 current"><a class="reference internal" href="SPART.html">SPART package</a></li>
-</ul>
-</li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="SPART.html">SPART package</a></li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
-  <li><a href="modules.html">SPART</a><ul>
-  <li><a href="SPART.html">SPART package</a><ul>
-      <li>Previous: <a href="SPART.html" title="previous chapter">SPART package</a></li>
-      <li>Next: <a href="SPART.PROSPECT_5D.html" title="next chapter">SPART.PROSPECT_5D module</a></li>
-  </ul></li>
-  </ul></li>
   </ul></li>
 </ul>
 </div>

@@ -4,14 +4,45 @@ SPART package
 Submodules
 ----------
 
-.. toctree::
-   :maxdepth: 4
+SPART.BSM module
+----------------
 
-   Soil-Plant-Atmosphere Radiative Transfer (SPART) Model <SPART.SPART>
-   Brightness-Spatial-Moisture (BSM) Soil Relectance Model <SPART.BSM>
-   PROSPECT-D Leaf Reflectance Model <SPART.PROSPECT_5D>
-   SAIL-H Canopy Reflectance Model <SPART.SAILH>
-   Simplified Method for Atmospheric Correction (SMAC) Model <SPART.SMAC>
+.. automodule:: SPART.BSM
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+SPART.PROSPECT\_5D module
+-------------------------
+
+.. automodule:: SPART.PROSPECT_5D
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+SPART.SAILH module
+------------------
+
+.. automodule:: SPART.SAILH
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+SPART.SMAC module
+-----------------
+
+.. automodule:: SPART.SMAC
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+SPART.SPART module
+------------------
+
+.. automodule:: SPART.SPART
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Module contents
 ---------------

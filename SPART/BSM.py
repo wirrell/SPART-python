@@ -31,8 +31,7 @@ def BSM(soilpar, soilspec):
 
     Returns
     -------
-    np.array
-        Containing the relfectance spectrum for the soil, shape = (2001,)
+    SoilOptics
     """
     # Soil parameters - See object SoilParameters for variable details
     SMp = soilpar.SMp
@@ -159,8 +158,8 @@ class SoilParametersFromFile:
 
     Parameters
     ----------
-    file_path : str
-        path to JPL soil reflectance spectra file
+    soil_file : str or np.array
+        path to JPL soil reflectance spectra file or array containing rdry
     SMp : float
         Soil moisture percentage [%]
     SMC : float, optional
@@ -176,20 +175,25 @@ class SoilParametersFromFile:
         Array containing soil reflectance spectrum extracted from file and
         interpolated to 1 nm intervals between 400 nm and 2400 nm
     """
-    def __init__(self, file_path, SMp, SMC=None, film=None):
-        self.rdry = self._load_jpl_soil_refl(file_path)
-        self.SMp = SMp
+    def __init__(self, soil_file, SMp, SMC=None, film=None):
         if isinstance(SMC, type(None)):
-            print("BSM soil model: SMC not supplied, set to default of 25 %")
+            warnings.warn("BSM soil model: SMC not supplied, set to default of 25 %")
             self.SMC = 25
         else:
             self.SMC = SMC
         if isinstance(film, type(None)):
-            print("BSM soil model: water film optical thickness not supplied,")
-            print("\t set to default of 0.0150 cm")
+            warnings.warn("BSM soil model: water film optical thickness not supplied,")
+            warnings.warn("\t set to default of 0.0150 cm")
             self.film = 0.0150
         else:
             self.film = film
+
+        # Allow the rdry spectra to be passed directly to the object.
+        if isinstance(soil_file, np.array):
+            self.rdry = soil_file
+        else:
+            self.rdry = self._load_jpl_soil_refl(soil_file)
+        self.SMp = SMp
         self.rdry_set = True
 
     def _load_jpl_soil_refl(self, file_path):
