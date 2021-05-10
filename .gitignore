@@ -7,4 +7,7 @@
 *.csv
 /__pycache__/
 venv/
+.project
+.pydevproject
+*.pyc
 
