@@ -5,3 +5,6 @@
 *.dat
 *.txt
 *.csv
+/__pycache__/
+venv/
+
