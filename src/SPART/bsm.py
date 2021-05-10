@@ -1,17 +1,17 @@
 """
 Brightness-Shape-Moisture soil model.
 
-Ported from the original matlat SPART code.
+Ported from the original matlat run_spart code.
 
 Model as outlined in:
-    The SPART model: A soil-plant-atmosphere radiative transfer model
+    The run_spart model: A soil-plant-atmosphere radiative transfer model
     for satellite measurements in the solar spectrum - Yang et al.
 """
 import warnings
 import numpy as np
 import pandas as pd
 from scipy.stats import poisson
-from .PROSPECT_5D import calculate_tav
+from prospect_5d import calculate_tav
 
 
 def BSM(soilpar, soilspec):
@@ -26,7 +26,7 @@ def BSM(soilpar, soilspec):
     soilspec : dict
         Contains keys ['GSV', 'kw', 'nw'] which key the Global Soil Vectors,
         water absorption constants for the spectrum and water refraction index
-        for the spectrum. Loaded in in the main SPART script and passed to this
+        for the spectrum. Loaded in in the main run_spart script and passed to this
         function.
 
     Returns

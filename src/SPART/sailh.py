@@ -1,7 +1,7 @@
 """
 SAILH Canopy model.
 
-Ported from the original SPART matlab code.
+Ported from the original run_spart matlab code.
 
 SAILH model outlined in:
     Theory of radiative transfer models applied in optical remote sensing
@@ -17,9 +17,9 @@ def SAILH(soil, leafopt, canopy, angles):
 
     Parameters
     ----------
-    soil : BSM.SoilOptics
+    soil : bsm.SoilOptics
         Contains soil reflectance spectra for 400 nm to 2400 nm
-    leafopt : PROSPECT_5D.LeafOptics
+    leafopt : prospect_5d.LeafOptics
         Contains leaf reflectance and transmittance spectra, 400 nm to 2400 nm,
         2500 to 15000 nm, and 16000 to 50000 nm.
     canopy : CanopyStructure
@@ -37,7 +37,7 @@ def SAILH(soil, leafopt, canopy, angles):
     if len(leafopt.refl) != 2162:
         raise RuntimeError('Parameter leafopt.refl must be of len 2162'
                            ' i.e. include thermal specturm. \n This error'
-                           ' usually occurs if you are feeding the PROSPECT_5D'
+                           ' usually occurs if you are feeding the prospect_5d'
                            ' output directly into the SAILH model with adding'
                            '\n the neccessary thermal wavelengths.')
 

@@ -2,7 +2,7 @@
 Soil-Plant-Atmosphere Radiative Transfer model
 for top-of-canopy and top-of-atmosphere reflectance
 
-Coupling BSM, PROSAIL and SMAC to simulate TOA reflectance
+Coupling bsm, PROSAIL and smac to simulate TOA reflectance
 
 Python port coded by George Worrall (gworrall@ufl.edu)
 Center for Remote Sensing, University of Florida
@@ -21,28 +21,29 @@ import pickle
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from .BSM import BSM, SoilParameters, SoilParametersFromFile
-from .PROSPECT_5D import PROSPECT_5D, LeafBiology
-from .SAILH import SAILH, CanopyStructure, Angles
-from .SMAC import SMAC, AtmosphericProperties
+from bsm import BSM, SoilParameters, SoilParametersFromFile
+from prospect_5d import PROSPECT_5D, LeafBiology
+from sailh import SAILH, CanopyStructure, Angles
+from smac import SMAC, AtmosphericProperties
 
-# TODO: look at threading BSM and PROSPECT as they don't require each
+
+# TODO: look at threading bsm and PROSPECT as they don't require each
 # other
 
 class SPART:
     """
-    SPART model.
+    run_spart model.
 
     Parameters
     ----------
     soilpar : SoilParameters
-        Holds the soil parameters for the BSM model.
+        Holds the soil parameters for the bsm model.
     leafbio : LeafBiology
         Hold the leaf biology parameters for the PROSPECT model.
     canopy : CanopyStructure
-        Holds the canopy parameters for the SAILH model.
+        Holds the canopy parameters for the sailh model.
     atm : AtmosphericProperties
-        Holds the atmospheric properties for the SMAC model.
+        Holds the atmospheric properties for the smac model.
     sensor : str
         Name of RS platform to simulate. This is done after the SAIL stage and
         saves on atmospheric diffuse reflectance calculations for TOC and
@@ -60,12 +61,12 @@ class SPART:
 
     Attributes
     ----------
-    soilopt : BSM.SoilOptics
+    soilopt : bsm.SoilOptics
         Contains soil reflectances
-    leafopt : PROSPECT_5D.LeafOptics
+    leafopt : prospect_5d.LeafOptics
         Contains leaf reflectance and transmittance and fraction contributed
         by chlorphyll
-    canopyopt : SAILH.CanopyReflectances
+    canopyopt : sailh.CanopyReflectances
         Contains bidrectional and directional, diffuce and specular reflectance
     R_TOC : np.array
         Top of canopy reflectance
@@ -173,7 +174,7 @@ class SPART:
         These are that soil reflectance is the value for 2400 nm
         in the entire thermal range and that leaf relctance and
         transmittance are 0.01 in the thermal range (this is
-        a model assumption that is set in the LeafBiology class in the BSM
+        a model assumption that is set in the LeafBiology class in the bsm
         script)
 
         Returns
@@ -185,7 +186,7 @@ class SPART:
         self._rsoil[self.spectral.IwlT] = 1
 
     def run(self):
-        """Run the SPART model.
+        """Run the run_spart model.
 
         Returns
         -------
@@ -203,7 +204,7 @@ class SPART:
             self._tracker['DOY'] = False
             self._tracker['angles'] = False
 
-        # Run the BSM model
+        # Run the bsm model
         if self._tracker['soil']:
             soilopt = BSM(self._soilpar, self.optipar)
             # Update soil optics refl and trans to include thermal
@@ -244,7 +245,7 @@ class SPART:
         rv_sd = np.interp(sensor_wavelengths, self.spectral.wlS,
                           rad.rsd.T[0])
 
-        # Run the SMAC atmosphere model
+        # Run the smac atmosphere model
         if (self._tracker['atm'] or self._tracker['angles'] or
             self._tracker['sensor']):
             atmopt = SMAC(self._angles, self._atm, self.sensorinfo['SMAC_coef'])
