@@ -11,7 +11,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from scipy.stats import poisson
-from prospect_5d import calculate_tav
+from .prospect_5d import calculate_tav
 
 
 def BSM(soilpar, soilspec):

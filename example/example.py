@@ -16,5 +16,13 @@ angles = SPART.Angles(sol_angle=40, obs_angle=0, rel_angle=0)
 atm = SPART.AtmosphericProperties(aot550=0.3246, uo3=0.3480, uh2o=1.4116, Pa=1013.25)
 
 # run model for specific sensor (in the example, MODIS)
-spart = SPART.SPART(soilpar, leafbio, canopy, atm, angles, sensor='', DOY=100)
-results = spart.run()  # Pandas DataFrame containing R_TOC, R_TOA, L_TOA
+spart_s2 = SPART.SPART(soilpar, leafbio, canopy, atm, angles, sensor='Sentinel2A', DOY=100)
+spart_s3 = SPART.SPART(soilpar, leafbio, canopy, atm, angles, sensor='Sentinel3A-OLCI', DOY=100)
+results_s2 = spart_s2.run()  # Pandas DataFrame containing R_TOC, R_TOA, L_TOA
+results_s3 = spart_s3.run()
+
+
+import matplotlib.pyplot as plt
+
+plt.plot(results_l8.R_TOA)
+
