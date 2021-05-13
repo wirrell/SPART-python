@@ -5,3 +5,5 @@
 *.dat
 *.txt
 *.csv
+venv
+
