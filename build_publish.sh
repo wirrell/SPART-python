@@ -6,7 +6,7 @@ python setup.py bdist_wheel --universal
 
 # publish to PyPI using twine
 # make sure to configure .pypirc file first
-python -m twine --pre upload repository spart dist/*
+python -m twine upload --repository spart dist/*
 
 # cleaning up. This part has to be adopted by Windows users
 # the python calls above should be fine!
