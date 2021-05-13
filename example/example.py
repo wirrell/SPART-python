@@ -1,4 +1,4 @@
-import SPART
+import spart as SPART
 
 # run leaf model (PROSPECT-D)
 leafbio = SPART.LeafBiology(Cab=40, Cca=10, Cw=0.02, Cdm=0.01, Cs=0, Cant=10, N=1.5)

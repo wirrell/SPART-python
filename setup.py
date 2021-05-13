@@ -5,6 +5,7 @@ Created on May 13, 2021
 '''
 
 import setuptools
+from setuptools import find_packages
 from os import path
 
 home = path.abspath(path.dirname(__file__))
@@ -13,7 +14,7 @@ with open(path.join(home, 'README.md'), encoding='utf-8') as readme:
 
 
 setuptools.setup(
-    name='SPART',
+    name='spart',
     use_scm_version=True,
     setup_requires=['setuptools_scm'],
     description = 'The Soil-Plant-Atmosphere radiative transfer model',
@@ -22,10 +23,12 @@ setuptools.setup(
     author='NA',
     author_email ='NA',
     url='NA',
-    package_dir={'SPART':'src'},
-    packages=['SPART'],
+    packages = find_packages(
+        where = 'src'
+    ),
+    package_dir={'':'src'},
     include_package_data=True,
-    package_data={'SPART': ['./model_parameters/*.pkl', './sensor_information/*.pkl']},
+    package_data={'': ['./model_parameters/*.pkl', './sensor_information/*.pkl']},
     classifiers = [
      "Programming Language :: Python :: 3",
      "Operating System :: OS Independent",
