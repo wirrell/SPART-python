@@ -1,4 +1,4 @@
-import SPART
+import spart as SPART
 
 # run leaf model (PROSPECT-D)
 leafbio = SPART.LeafBiology(Cab=40, Cca=10, Cw=0.02, Cdm=0.01, Cs=0, Cant=10, N=1.5)
@@ -17,13 +17,4 @@ atm = SPART.AtmosphericProperties(aot550=0.3246, uo3=0.3480, uh2o=1.4116, Pa=101
 
 # run model for specific sensor (in the example, MODIS)
 spart_s2 = SPART.SPART(soilpar, leafbio, canopy, atm, angles, sensor='Sentinel2A-MSI', DOY=100)
-spart_s3 = SPART.SPART(soilpar, leafbio, canopy, atm, angles, sensor='Sentinel3A-OLCI', DOY=100)
 results_s2 = spart_s2.run()  # Pandas DataFrame containing R_TOC, R_TOA, L_TOA
-results_s3 = spart_s3.run()
-
-
-import matplotlib.pyplot as plt
-
-plt.plot(results_s2.R_TOA)
-plt.show()
-
