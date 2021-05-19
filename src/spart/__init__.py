@@ -54,6 +54,8 @@ class SPART:
         'LANDSAT5-TM'
         'LANDSAT7-ETM'
         'LANDSAT8-OLI'
+        'Sentinel2A-MSI'
+        'Sentinel2B-MSI'
         'Sentinel3A-OLCI'
         'Sentinel3B-OLCI'
     DOY : int
