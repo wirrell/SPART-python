@@ -24,36 +24,9 @@ This also install the [dependencies](#requirements).
 
 ### Installation from PyPI
 
-For user with a ETH Gitlab account it is possible to install the latest version (or an older one) from the ETH Gitlab PyPI index. Therefore, users need a personal Gitlab Access Token. Please check the [official Gitlab docs](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html) about how to create tokens and what they mean.
+Installation from PyPI:
 
-Once a token is created, it is possible to install the package from the ETH PyPI repository into a clean virtual environment using pip:
-
-	pip install spart --extra-index-url https://__token__:<your_personal_token>@gitlab.ethz.ch/api/v4/projects/24594/packages/pypi/simple
-
-### Publishing to PyPI
-
-Developers wishing to bring their own version of SPART to the ETH PyPI index, can use the [shell script](./build_publish.sh). The command in it should work in very similar form also under Windows (at least the python commands will definitely work).
-
-To publish to PyPI the Python package [twine](https://pypi.org/project/twine/) must be install before.
-
-Moreover, it is recommended to read the official [Gitlab documentation](https://docs.gitlab.com/ee/user/packages/pypi_repository/index.html) to learn about PyPI and how the publishing and configuration process works.
-
-For the build script provided, it is necessary to configure a .pypirc file which Linux user have to place in the /home/ directory:
-
-	~/.pypirc
-
-The .pypirc file has the following content and needs again a personal Gitlab API access token:
-
-```
-[distutils]
-index-servers =
-    spart
-
-[spart]
-repository = https://gitlab.ethz.ch/api/v4/projects/24594/packages/pypi
-username = __token__
-password = <your_personal_access_token>
-```
+    pip install spart
 
 ## Requirements
 ```
