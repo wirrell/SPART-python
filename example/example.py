@@ -4,7 +4,7 @@ import spart as SPART
 leafbio = SPART.LeafBiology(Cab=40, Cca=10, Cw=0.02, Cdm=0.01, Cs=0, Cant=10, N=1.5)
 
 # run soil model (BSM)
-soilpar = SPART.SoilParameters(B=0.5, lat=47, lon=8, SMp=15)
+soilpar = SPART.SoilParameters(B=0.5, lat=20, lon=50, SMp=15)
 
 # run SAILH
 canopy = SPART.CanopyStructure(LAI=3, LIDFa=-0.35, LIDFb=-0.15, q=0.05) # h = hot spot parameter
