@@ -76,6 +76,7 @@ def run_spart():
     
     return _run_spart
 
+
 @pytest.mark.parametrize('fname_spart_params, sensor_name',
                         [('spart_params1.csv', 'Sentinel2A-MSI')])
 def test_run_spart(datadir, run_spart, fname_spart_params, sensor_name):
