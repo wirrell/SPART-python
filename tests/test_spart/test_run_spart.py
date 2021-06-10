@@ -78,7 +78,7 @@ def run_spart():
 
 
 @pytest.mark.parametrize('fname_spart_params, sensor_name',
-                        [('spart_params1.csv', 'Sentinel2A-MSI')])
+                        [('spart_params1.csv', 'LANDSAT8-OLI')])
 def test_run_spart(datadir, run_spart, fname_spart_params, sensor_name):
     """run SPART simulations on a number of input parameter combinations"""
 
@@ -92,6 +92,9 @@ def test_run_spart(datadir, run_spart, fname_spart_params, sensor_name):
             sim_specs = run_spart(parameters=params,
                                   sensor_name=sensor_name)
             # assert that simulated spectra are physically plausible
-            assert all(sim_specs['L_TOA'] > 0.), f'negative simulated TOA irradiances (spectrum #{idx})'
-            assert all(sim_specs['R_TOA'] > 0.), f'negative simulated TOA reflectances (spectrum #{idx})'
-            assert all(sim_specs['R_TOC'] > 0.), f'negative simulated TOC reflectances (spectrum #{idx})'
+            # (small negative values can result from extreme atmospheric conditions like
+            # extremely high aot500 values or unrealistic air pressure values;
+            # personnel communication with Olivier Hagolle from CNES (France) on 10th June 2021
+            assert all(sim_specs['L_TOA'] > -0.1), f'negative simulated TOA irradiances (spectrum #{idx})'
+            assert all(sim_specs['R_TOA'] > -0.1), f'negative simulated TOA reflectances (spectrum #{idx})'
+            assert all(sim_specs['R_TOC'] > -0.1), f'negative simulated TOC reflectances (spectrum #{idx})'
