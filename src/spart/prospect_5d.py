@@ -1,5 +1,5 @@
 """
-SPART-python
+run_spart-python
 
 PROSPECT 5D model.
 
@@ -25,7 +25,7 @@ class LeafBiology:
     Cdm : float
         Leaf mass per unit area, g / cm ^ 2
     Cs : float
-        Brown pigments (from SPART paper, unitless)
+        Brown pigments (from run_spart paper, unitless)
     Cant : float
         Anthocyanin content, micro g / cm ^ 2
     N : float
@@ -42,15 +42,15 @@ class LeafBiology:
     Cdm : float
         Leaf mass per unit area, g / cm ^ 2
     Cs : float
-        Fraction senescent material (brown pigment from SPART paper, unitless)
+        Fraction senescent material (brown pigment from run_spart paper, unitless)
     Cant : float
         Anthocyanin content, micro g / cm ^ 2
     N : float
         Leaf structure parameter. Unitless.
     rho_thermal : float
-        Reflectance in the thermal range. SPART assumption: 0.01
+        Reflectance in the thermal range. run_spart assumption: 0.01
     tau_thermal : float
-        Transmittance in the thermal range. SPART assumption: 0.01
+        Transmittance in the thermal range. run_spart assumption: 0.01
     """
 
     def __init__(self, Cab, Cca, Cw, Cdm, Cs, Cant, N):
@@ -219,7 +219,7 @@ def calculate_tav(alpha, nr):
 
     NOTE
     ----
-    Lifted directly from original SPART matlab calculations.
+    Lifted directly from original run_spart matlab calculations.
     Papers cited in original PROSPECT model:
         Willstatter-Stoll Theory of Leaf Reflectance Evaluated
         by Ray Tracinga - Allen et al.

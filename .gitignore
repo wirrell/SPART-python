@@ -5,3 +5,14 @@
 *.dat
 *.txt
 *.csv
+/__pycache__/
+venv/
+install/
+build/
+dist/
+.project
+.pydevproject
+*.pyc
+*.egg-info/
+.eggs/
+

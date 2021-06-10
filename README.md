@@ -11,7 +11,22 @@ The model paper is:
 The SPART model: A soil-plant-atmosphere radiative transfer model for satellite measurements in the solar spectrum - Yang et al. (2020)
 
 ## Installation
-`pip install SPART-python`
+
+There are two ways:
+
+### Installation from Source
+
+Create a clean virtual environment and execute the following command in the package root
+
+	python setup.py install --user
+
+This also install the [dependencies](#requirements).
+
+### Installation from PyPI
+
+Installation from PyPI:
+
+    pip install spart
 
 ## Requirements
 ```
@@ -20,6 +35,11 @@ NumPy
 SciPy
 Pandas
 ```
+All dependencies are installed when running 
+	
+	python setup.py install --user
+
+in a clean virtual environment. This also applies to the package data required to run (pickled objects containing optical absorption coefficients and sensor specific information like spectral response functions and band wavelengths).
 
 ## Quickstart Example
 ```
@@ -33,6 +53,8 @@ Pandas
                  100)
    results = spart.run()  # Pandas DataFrame containing R_TOC, R_TOA, L_TOA
 ```
+
+See also [here](./example/example.py) for an executable code snippet.
 
 ## Documentation
 Full documentation can be found at https://spart-python.readthedocs.io/

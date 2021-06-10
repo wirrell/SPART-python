@@ -17,7 +17,7 @@ def SMAC(angles, atm, coefs):
 
     Parameters
     ----------
-    angles : SAILH.Angles
+    angles : sailh.Angles
         Contains solar zenith, observational zentiy, and relative difference of
         azimuth angles in degrees.
     atm : AtmosphericProperties
