@@ -187,8 +187,14 @@ class SPART:
         self._tau[self.spectral.IwlT] = self.leafbio.tau_thermal
         self._rsoil[self.spectral.IwlT] = 1
 
-    def run(self):
+    def run(self, debug=False):
         """Run the run_spart model.
+
+        Parameters
+        ----------
+        debug : bool
+            if True, returns the simulated BSM derived soil spectra as well.
+            Default: False
 
         Returns
         -------
@@ -279,6 +285,12 @@ class SPART:
                                          self.R_TOC[0]),
                                      index=sensor_wavelengths,
                                      columns=['Band', 'L_TOA', 'R_TOA', 'R_TOC'])
+
+        if debug:
+            # wet soil reflectance
+            rsoil = np.interp(sensor_wavelengths, self.spectral.wlS,
+                              self.soilopt.refl[:,0])
+            results_table['rsoil'] = rsoil
 
         return results_table
 
