@@ -2,6 +2,7 @@
 import pytest
 import spart
 import pandas as pd
+import numpy as np
 
 
 class SPART_Parameters(object):
@@ -71,14 +72,14 @@ def run_spart():
                             angles=geometry,
                             sensor=sensor_name,
                             DOY=doy)
-        simulated = model.run()
+        simulated = model.run(debug=True)
         return simulated
     
     return _run_spart
 
 
 @pytest.mark.parametrize('fname_spart_params, sensor_name',
-                        [('spart_params1.csv', 'LANDSAT8-OLI')])
+                        [('spart_params1.csv', 'Sentinel2A-MSI')])
 def test_run_spart(datadir, run_spart, fname_spart_params, sensor_name):
     """run SPART simulations on a number of input parameter combinations"""
 
@@ -86,15 +87,22 @@ def test_run_spart(datadir, run_spart, fname_spart_params, sensor_name):
     testdata_file = datadir.join(fname_spart_params)
     spart_params = pd.read_csv(testdata_file)
 
-    # run simulations
+    # run simulations and check soil spectra (debug)
+    colnames = [f'B{x+1}' for x in range(13)]
+    df = pd.DataFrame(np.zeros(shape=(spart_params.shape[0], 13), dtype=np.float64),
+                           columns=colnames)
     for idx, params in spart_params.iterrows():
         
             sim_specs = run_spart(parameters=params,
                                   sensor_name=sensor_name)
+            sim_specs.index = colnames
             # assert that simulated spectra are physically plausible
             # (small negative values can result from extreme atmospheric conditions like
             # extremely high aot500 values or unrealistic air pressure values;
             # personnel communication with Olivier Hagolle from CNES (France) on 10th June 2021
-            assert all(sim_specs['L_TOA'] > -0.1), f'negative simulated TOA irradiances (spectrum #{idx})'
-            assert all(sim_specs['R_TOA'] > -0.1), f'negative simulated TOA reflectances (spectrum #{idx})'
-            assert all(sim_specs['R_TOC'] > -0.1), f'negative simulated TOC reflectances (spectrum #{idx})'
+            # assert all(sim_specs['L_TOA'] > -0.1), f'negative simulated TOA irradiances (spectrum #{idx})'
+            # assert all(sim_specs['R_TOA'] > -0.1), f'negative simulated TOA reflectances (spectrum #{idx})'
+            # assert all(sim_specs['R_TOC'] > -0.1), f'negative simulated TOC reflectances (spectrum #{idx})'
+            df.loc[idx, colnames] = sim_specs['R_TOC']
+
+    df.to_csv(datadir.join('Sentinel2A-MSI_rtoc_modified-SPART_prospect5d.csv'))

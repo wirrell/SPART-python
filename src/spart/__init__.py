@@ -67,7 +67,7 @@ class SPART:
         Contains soil reflectances
     leafopt : prospect_5d.LeafOptics
         Contains leaf reflectance and transmittance and fraction contributed
-        by chlorphyll
+        by chlorophyll
     canopyopt : sailh.CanopyReflectances
         Contains bidrectional and directional, diffuce and specular reflectance
     R_TOC : np.array
@@ -193,8 +193,8 @@ class SPART:
         Parameters
         ----------
         debug : bool
-            if True, returns the simulated BSM derived soil spectra as well.
-            Default: False
+            if True, returns the simulated BSM derived soil spectra as well
+            as additional output column. Default: False
 
         Returns
         -------

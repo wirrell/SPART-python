@@ -17,3 +17,5 @@ dist/
 .eggs/
 
 /.pytest_cache/
+publish.sh
+
