@@ -1,7 +1,7 @@
 SPART.SAILH module
 ==================
 
-.. automodule:: SPART.SAILH
+.. automodule:: src.spart.sailh
    :members:
    :undoc-members:
    :show-inheritance:

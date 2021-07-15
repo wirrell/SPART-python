@@ -4,15 +4,15 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
     <title>SPART.BSM module &#8212; SPART-python 1.0.2 documentation</title>
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
-    <script src="../_static/language_data.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
    
@@ -31,254 +31,33 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="module-SPART.BSM">
-<span id="spart-bsm-module"></span><h1>SPART.BSM module<a class="headerlink" href="#module-SPART.BSM" title="Permalink to this headline">¶</a></h1>
-<p>Brightness-Shape-Moisture soil model.</p>
-<p>Ported from the original matlat SPART code.</p>
-<dl class="simple">
-<dt>Model as outlined in:</dt><dd><p>The SPART model: A soil-plant-atmosphere radiative transfer model
-for satellite measurements in the solar spectrum - Yang et al.</p>
-</dd>
-</dl>
-<dl class="py function">
-<dt id="SPART.BSM.BSM">
-<code class="sig-prename descclassname">SPART.BSM.</code><code class="sig-name descname">BSM</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">soilpar</span></em>, <em class="sig-param"><span class="n">soilspec</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SPART.BSM.BSM" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run the BSM soil model</p>
+  <section id="module-src.spart.BSM">
+<span id="spart-bsm-module"></span><h1>SPART.BSM module<a class="headerlink" href="#module-src.spart.BSM" title="Permalink to this headline">¶</a></h1>
+<p>Run the BSM soil model</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>soilpar</strong> (<a class="reference internal" href="#SPART.BSM.SoilParameters" title="SPART.BSM.SoilParameters"><em>SoilParameters</em></a>) – Object with attributes [B, lat, lon] / dry soil spectra, and SMp, SMC,
-film</p></li>
-<li><p><strong>soilspec</strong> (<em>dict</em>) – Contains keys [‘GSV’, ‘kw’, ‘nw’] which key the Global Soil Vectors,
+<dt class="field-odd">param soilpar</dt>
+<dd class="field-odd"><p>Object with attributes [B, lat, lon] / dry soil spectra, and SMp, SMC,
+film</p>
+</dd>
+<dt class="field-even">type soilpar</dt>
+<dd class="field-even"><p>SoilParameters</p>
+</dd>
+<dt class="field-odd">param soilspec</dt>
+<dd class="field-odd"><p>Contains keys [‘GSV’, ‘kw’, ‘nw’] which key the Global Soil Vectors,
 water absorption constants for the spectrum and water refraction index
-for the spectrum. Loaded in in the main SPART script and passed to this
-function.</p></li>
-</ul>
+for the spectrum. Loaded in in the main run_spart script and passed to this
+function.</p>
 </dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p></p>
+<dt class="field-even">type soilspec</dt>
+<dd class="field-even"><p>dict</p>
 </dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="#SPART.BSM.SoilOptics" title="SPART.BSM.SoilOptics">SoilOptics</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py class">
-<dt id="SPART.BSM.SoilOptics">
-<em class="property">class </em><code class="sig-prename descclassname">SPART.BSM.</code><code class="sig-name descname">SoilOptics</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">refl</span></em>, <em class="sig-param"><span class="n">refl_dry</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SPART.BSM.SoilOptics" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Class to hold soil optical reflectance spectra.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>refl</strong> (<em>np.array</em>) – Soil reflectance spectra (with SM taken into account)</p></li>
-<li><p><strong>refl_dry</strong> (<em>np.array</em>) – Dry soil reflectance spectra</p></li>
-</ul>
+<dt class="field-odd">returns</dt>
+<dd class="field-odd"><p></p></dd>
+<dt class="field-even">rtype</dt>
+<dd class="field-even"><p>SoilOptics</p>
 </dd>
 </dl>
-<dl class="py attribute">
-<dt id="SPART.BSM.SoilOptics.refl">
-<code class="sig-name descname">refl</code><a class="headerlink" href="#SPART.BSM.SoilOptics.refl" title="Permalink to this definition">¶</a></dt>
-<dd><p>Soil reflectance spectra (with SM taken into account)</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>np.array</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt id="SPART.BSM.SoilOptics.refl_dry">
-<code class="sig-name descname">refl_dry</code><a class="headerlink" href="#SPART.BSM.SoilOptics.refl_dry" title="Permalink to this definition">¶</a></dt>
-<dd><p>Dry soil reflectance spectra</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>np.array</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt id="SPART.BSM.SoilParameters">
-<em class="property">class </em><code class="sig-prename descclassname">SPART.BSM.</code><code class="sig-name descname">SoilParameters</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">B</span></em>, <em class="sig-param"><span class="n">lat</span></em>, <em class="sig-param"><span class="n">lon</span></em>, <em class="sig-param"><span class="n">SMp</span></em>, <em class="sig-param"><span class="n">SMC</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">film</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SPART.BSM.SoilParameters" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Class to hold the soil characteristics for BSM.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>B</strong> (<em>float</em>) – Soil brightness as defined in the paper.</p></li>
-<li><p><strong>lat</strong> (<em>float</em>) – Soil spectral coordinate, latitiude, realistic range 80 - 120 deg
-for soil behavior (see paper, phi)</p></li>
-<li><p><strong>lon</strong> (<em>float</em>) – Soil spectral coordinate, longitude, realistic range -30 - 30 deg
-for soil behaviour (see paper, lambda)</p></li>
-<li><p><strong>SMp</strong> (<em>float</em>) – Soil moisture percentage [%]</p></li>
-<li><p><strong>SMC</strong> (<em>float</em><em>, </em><em>optional</em>) – Soil moisture carrying capacity of the soil</p></li>
-<li><p><strong>film</strong> (<em>float</em><em>, </em><em>optional</em>) – Single water film optical thickness, cm</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt id="SPART.BSM.SoilParameters.B">
-<code class="sig-name descname">B</code><a class="headerlink" href="#SPART.BSM.SoilParameters.B" title="Permalink to this definition">¶</a></dt>
-<dd><p>Soil brightness as defined in the paper.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt id="SPART.BSM.SoilParameters.lat">
-<code class="sig-name descname">lat</code><a class="headerlink" href="#SPART.BSM.SoilParameters.lat" title="Permalink to this definition">¶</a></dt>
-<dd><p>Soil spectral coordinate, latitiude</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt id="SPART.BSM.SoilParameters.lon">
-<code class="sig-name descname">lon</code><a class="headerlink" href="#SPART.BSM.SoilParameters.lon" title="Permalink to this definition">¶</a></dt>
-<dd><p>Soil spectral coordinate, longitude</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt id="SPART.BSM.SoilParameters.SMp">
-<code class="sig-name descname">SMp</code><a class="headerlink" href="#SPART.BSM.SoilParameters.SMp" title="Permalink to this definition">¶</a></dt>
-<dd><p>Soil moisture percentage [%]</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt id="SPART.BSM.SoilParameters.SMC">
-<code class="sig-name descname">SMC</code><a class="headerlink" href="#SPART.BSM.SoilParameters.SMC" title="Permalink to this definition">¶</a></dt>
-<dd><p>Soil moisture carrying capacity of the soil</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt id="SPART.BSM.SoilParameters.film">
-<code class="sig-name descname">film</code><a class="headerlink" href="#SPART.BSM.SoilParameters.film" title="Permalink to this definition">¶</a></dt>
-<dd><p>Single water film optical thickness, cm</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt id="SPART.BSM.SoilParameters.rdry_set">
-<code class="sig-name descname">rdry_set</code><a class="headerlink" href="#SPART.BSM.SoilParameters.rdry_set" title="Permalink to this definition">¶</a></dt>
-<dd><p>False. Declares that the object doesnt’ contain a dry soil reflectance
-spectra</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>bool</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt id="SPART.BSM.SoilParametersFromFile">
-<em class="property">class </em><code class="sig-prename descclassname">SPART.BSM.</code><code class="sig-name descname">SoilParametersFromFile</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">soil_file</span></em>, <em class="sig-param"><span class="n">SMp</span></em>, <em class="sig-param"><span class="n">SMC</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">film</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SPART.BSM.SoilParametersFromFile" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Class to load and hold soil reflectance spectrum from the JPL soil
-reflectance data available at <a class="reference external" href="https://speclib.jpl.nasa.gov/">https://speclib.jpl.nasa.gov/</a></p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>soil_file</strong> (<em>str</em><em> or </em><em>np.array</em>) – path to JPL soil reflectance spectra file or array containing rdry</p></li>
-<li><p><strong>SMp</strong> (<em>float</em>) – Soil moisture percentage [%]</p></li>
-<li><p><strong>SMC</strong> (<em>float</em><em>, </em><em>optional</em>) – Soil moisture carrying capacity of the soil</p></li>
-<li><p><strong>film</strong> (<em>float</em><em>, </em><em>optional</em>) – Single water film optical thickness, cm</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt id="SPART.BSM.SoilParametersFromFile.rdry_set">
-<code class="sig-name descname">rdry_set</code><a class="headerlink" href="#SPART.BSM.SoilParametersFromFile.rdry_set" title="Permalink to this definition">¶</a></dt>
-<dd><p>True. Declares that the object contains a dry soil reflectance spectra</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>bool</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt id="SPART.BSM.SoilParametersFromFile.rdry">
-<code class="sig-name descname">rdry</code><a class="headerlink" href="#SPART.BSM.SoilParametersFromFile.rdry" title="Permalink to this definition">¶</a></dt>
-<dd><p>Array containing soil reflectance spectrum extracted from file and
-interpolated to 1 nm intervals between 400 nm and 2400 nm</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"><p>np.array</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py function">
-<dt id="SPART.BSM.soilwat">
-<code class="sig-prename descclassname">SPART.BSM.</code><code class="sig-name descname">soilwat</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rdry</span></em>, <em class="sig-param"><span class="n">nw</span></em>, <em class="sig-param"><span class="n">kw</span></em>, <em class="sig-param"><span class="n">SMp</span></em>, <em class="sig-param"><span class="n">SMC</span></em>, <em class="sig-param"><span class="n">deleff</span></em><span class="sig-paren">)</span><a class="headerlink" href="#SPART.BSM.soilwat" title="Permalink to this definition">¶</a></dt>
-<dd><p>Model soil water effects on soil reflectance and return wet reflectance.</p>
-<dl class="simple">
-<dt>From original matlab code:</dt><dd><p>In this model it is assumed that the water film area is built up
-according to a Poisson process.</p>
-</dd>
-</dl>
-<p>See the description in the original model paper in the top of script
-docstring.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>rdry</strong> (<em>np.array</em>) – Dry soil reflectance</p></li>
-<li><p><strong>nw</strong> (<em>np.array</em>) – Refraction index of water</p></li>
-<li><p><strong>kw</strong> (<em>np.array</em>) – Absorption coefficient of water</p></li>
-<li><p><strong>SMp</strong> (<em>float</em>) – Soil moisture volume [%]</p></li>
-<li><p><strong>SMC</strong> (<em>float</em>) – Soil moisture carrying capacity</p></li>
-<li><p><strong>deleff</strong> (<em>float</em>) – Effective optical thickness of single water film, cm</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Wet soil reflectance spectra across 400 nm to 2400 nm</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>np.array</p>
-</dd>
-</dl>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The original matlab script accepts SMp row vectors for different SM
-percentages. This is not implemented here but may need to be in future
-if there is a significant speed bonus to doing so.</p>
-</div>
-</dd></dl>
-
-</div>
+</section>
 
 
           </div>
@@ -297,7 +76,7 @@ if there is a significant speed bonus to doing so.</p>
 
 
 <h3>Navigation</h3>
-<p class="caption"><span class="caption-text">Contents:</span></p>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="SPART.html">SPART package</a></li>
 </ul>
@@ -313,7 +92,7 @@ if there is a significant speed bonus to doing so.</p>
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <input type="submit" value="Go" />
     </form>
     </div>
@@ -335,7 +114,7 @@ if there is a significant speed bonus to doing so.</p>
       &copy;2020, G. Worrall.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.2.1</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.1.1</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |
