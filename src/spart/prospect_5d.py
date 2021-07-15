@@ -144,7 +144,7 @@ def PROSPECT_5D(leafbio, optical_params):
     # Before, check if the parameterization is physically plausible
     # (Cdm = PROT + CBC)
     if PROT > 0. or CBC > 0.:
-        if Cdm > 0 and (PROT > 0. or CBC > 0.):
+        if Cdm > 0:
             print('WARNING: When setting PROT and/or CBC > 0. we\n' \
                   'assume that PROSPECT-PRO was called. Cdm will be\n' \
                   'therefore set to zero (Cdm = PROT + CBC)')
