@@ -1,4 +1,3 @@
-
 import pytest
 import spart
 import pandas as pd
@@ -15,7 +14,7 @@ class SPART_Parameters(object):
     """
     # define the entries required to run the SPART submodels
     SMB = ['B', 'lat', 'lon', 'SMp', 'SMC', 'film']  # soil model
-    prospect_5d = ['Cab', 'Cca', 'Cw', 'Cdm', 'Cs', 'Cant', 'N']  # leaf model
+    prospect_5d = ['Cab', 'Cca', 'Cw', 'Cdm', 'Cs', 'Cant', 'N', 'PROT', 'CBC']  # leaf model
     sailh = ['LAI', 'LIDFa', 'LIDFb', 'q']  # canopy model
     SMAC = ['aot550', 'uo3', 'uh2o', 'Pa']  # atmosphere model
     angles = ['sol_angle', 'obs_angle', 'rel_angle']  # sunobserver geometry
@@ -81,7 +80,10 @@ def run_spart():
 @pytest.mark.parametrize('fname_spart_params, sensor_name',
                         [('spart_params1.csv', 'Sentinel2A-MSI')])
 def test_run_spart(datadir, run_spart, fname_spart_params, sensor_name):
-    """run SPART simulations on a number of input parameter combinations"""
+    """
+    run SPART simulations on a number of input parameter combinations
+    Test both available leaf models, Prospect5-D and Prospect-Pro
+    """
 
     # load SPART input parameters from the testdatadir
     testdata_file = datadir.join(fname_spart_params)
@@ -100,9 +102,9 @@ def test_run_spart(datadir, run_spart, fname_spart_params, sensor_name):
             # (small negative values can result from extreme atmospheric conditions like
             # extremely high aot500 values or unrealistic air pressure values;
             # personnel communication with Olivier Hagolle from CNES (France) on 10th June 2021
-            # assert all(sim_specs['L_TOA'] > -0.1), f'negative simulated TOA irradiances (spectrum #{idx})'
-            # assert all(sim_specs['R_TOA'] > -0.1), f'negative simulated TOA reflectances (spectrum #{idx})'
-            # assert all(sim_specs['R_TOC'] > -0.1), f'negative simulated TOC reflectances (spectrum #{idx})'
+            assert all(sim_specs['L_TOA'] > -0.1), f'negative simulated TOA irradiances (spectrum #{idx})'
+            assert all(sim_specs['R_TOA'] > -0.1), f'negative simulated TOA reflectances (spectrum #{idx})'
+            assert all(sim_specs['R_TOC'] > -0.1), f'negative simulated TOC reflectances (spectrum #{idx})'
             df.loc[idx, colnames] = sim_specs['R_TOC']
 
     df.to_csv(datadir.join('Sentinel2A-MSI_rtoc_modified-SPART_prospect5d.csv'))
