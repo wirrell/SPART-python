@@ -7,6 +7,7 @@
 *.csv
 /__pycache__/
 venv/
+spart-venv/
 install/
 build/
 dist/
@@ -17,3 +18,5 @@ dist/
 .eggs/
 
 /.pytest_cache/
+publish.sh
+

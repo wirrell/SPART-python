@@ -4,4 +4,4 @@ SPART
 .. toctree::
    :maxdepth: 4
 
-   SPART
+   src.spart

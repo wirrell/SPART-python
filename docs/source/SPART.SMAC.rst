@@ -1,7 +1,7 @@
 SPART.SMAC module
 =================
 
-.. automodule:: SPART.SMAC
+.. automodule:: src.spart.smac
    :members:
    :undoc-members:
    :show-inheritance:

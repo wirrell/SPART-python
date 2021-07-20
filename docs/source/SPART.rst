@@ -7,7 +7,7 @@ Submodules
 SPART.BSM module
 ----------------
 
-.. automodule:: SPART.BSM
+.. automodule:: src.spart.bsm
    :members:
    :undoc-members:
    :show-inheritance:
@@ -15,7 +15,7 @@ SPART.BSM module
 SPART.PROSPECT\_5D module
 -------------------------
 
-.. automodule:: SPART.PROSPECT_5D
+.. automodule:: src.spart.prospect_5d
    :members:
    :undoc-members:
    :show-inheritance:
@@ -23,7 +23,7 @@ SPART.PROSPECT\_5D module
 SPART.SAILH module
 ------------------
 
-.. automodule:: SPART.SAILH
+.. automodule:: src.spart.sailh
    :members:
    :undoc-members:
    :show-inheritance:
@@ -31,7 +31,7 @@ SPART.SAILH module
 SPART.SMAC module
 -----------------
 
-.. automodule:: SPART.SMAC
+.. automodule:: src.spart.smac
    :members:
    :undoc-members:
    :show-inheritance:
@@ -39,7 +39,7 @@ SPART.SMAC module
 SPART.SPART module
 ------------------
 
-.. automodule:: SPART.SPART
+.. automodule:: src.spart
    :members:
    :undoc-members:
    :show-inheritance:
@@ -47,7 +47,7 @@ SPART.SPART module
 Module contents
 ---------------
 
-.. automodule:: SPART
+.. automodule:: src.spart
    :members:
    :undoc-members:
    :show-inheritance:

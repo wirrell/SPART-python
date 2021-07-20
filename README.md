@@ -7,8 +7,15 @@ The source code can be found at: https://github.com/wirrell/SPART-python
 
 The original code can be found at: https://github.com/peiqiyang/SPART
 
+The optical absorption coefficients for PROSPECT-PRO (the successor of PROSPECT5-D) can be found at: https://github.com/jbferet/prospect
+
 The model paper is:
 The SPART model: A soil-plant-atmosphere radiative transfer model for satellite measurements in the solar spectrum - Yang et al. (2020)
+
+### Update Notifications
+
+- 2021-06-12: Sentinel2A+B coefficients were added in final version
+- 2021-06-15: PROSPECT-PRO was added as second leaf model option that builds on top of PROSPECT5-D (Féret et al., 2021). More information about PROSPECT-PRO can be found [in the paper by Féret et al. (2021)](https://doi.org/10.1016/j.rse.2020.112173). The optical absorption coefficients for CBC and PROT were taken from [this Github repository](https://github.com/jbferet/prospect).
 
 ## Installation
 

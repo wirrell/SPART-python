@@ -1,10 +1,15 @@
 """
 run_spart-python
 
-PROSPECT 5D model.
+PROSPECT 5D or PROSPECT-PRO model.
 
 Feret et al. - PROSPECT-D: Towards modeling leaf optical properties
     through a complete lifecycle
+
+PROSPECT-PRO model.
+
+Féret et al. (2021) - PROSPECT-PRO for estimating content of nitrogen-containing leaf proteins
+and other carbon-based constituents 
 """
 import numpy as np
 import scipy.integrate as integrate
@@ -30,6 +35,10 @@ class LeafBiology:
         Anthocyanin content, micro g / cm ^ 2
     N : float
         Leaf structure parameter. Unitless.
+    PROT : float
+        protein content, g / cm ^ 2
+    CBC : float
+        non-protein carbon-based constituent content, g cm ^ 2
 
     Attributes
     ----------
@@ -47,13 +56,19 @@ class LeafBiology:
         Anthocyanin content, micro g / cm ^ 2
     N : float
         Leaf structure parameter. Unitless.
+    PROT : float
+        leaf protein content, g / cm ^ 2. Default: 0.0
+        Range of values: 0 - 0.003 g / cm ^ 2 (Féret et al., 2021)
+    CBC : float
+        non-protein carbon-based constituent content, g cm ^ 2. Default: 0.0
+        Range of values: 0 - 0.01 g / cm ^ 2 (Féret et al., 2021)
     rho_thermal : float
         Reflectance in the thermal range. run_spart assumption: 0.01
     tau_thermal : float
         Transmittance in the thermal range. run_spart assumption: 0.01
     """
 
-    def __init__(self, Cab, Cca, Cw, Cdm, Cs, Cant, N):
+    def __init__(self, Cab, Cca, Cw, Cdm, Cs, Cant, N, PROT=0.0, CBC=0.0):
         self.Cab = Cab
         self.Cca = Cca
         self.Cw = Cw
@@ -61,6 +76,8 @@ class LeafBiology:
         self.Cs = Cs
         self.Cant = Cant
         self.N = N
+        self.PROT = PROT
+        self.CBC = CBC
         self.rho_thermal = 0.01
         self.tau_thermal = 0.01
 
@@ -120,6 +137,18 @@ def PROSPECT_5D(leafbio, optical_params):
     Cs = leafbio.Cs
     Cant = leafbio.Cant
     N = leafbio.N
+    PROT = leafbio.PROT     # PROSPECT-PRO
+    CBC = leafbio.CBC       # PROSPECT-PRO
+
+    # check if PROT and/or CBC are non-zero. If true, PROSPECT-PRO is run.
+    # Before, check if the parameterization is physically plausible
+    # (Cdm = PROT + CBC)
+    if PROT > 0. or CBC > 0.:
+        if Cdm > 0:
+            print('WARNING: When setting PROT and/or CBC > 0. we\n' \
+                  'assume that PROSPECT-PRO was called. Cdm will be\n' \
+                  'therefore set to zero (Cdm = PROT + CBC)')
+            Cdm = 0.
 
     # Model constants
     nr = optical_params['nr']
@@ -129,10 +158,13 @@ def PROSPECT_5D(leafbio, optical_params):
     Kw = optical_params['Kw']
     Ks = optical_params['Ks']
     Kant = optical_params['Kant']
+    # add PROSPECT-PRO optical parameters (Féret et al., 2021)
+    kcbc = optical_params['cbc']
+    kprot = optical_params['prot']
 
     # Compact leaf layer
     Kall = (Cab * Kab + Cca * Kca + Cdm * Kdm + Cw * Kw + Cs * Ks +
-            Cant * Kant) / N
+            Cant * Kant + CBC * kcbc + PROT * kprot) / N
 
     # Non-conservative scattering (normal case)
     j = np.where(Kall > 0)[0]

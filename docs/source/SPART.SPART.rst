@@ -1,7 +1,7 @@
 SPART.SPART module
 ==================
 
-.. automodule:: SPART.SPART
+.. automodule:: src.spart
    :members:
    :undoc-members:
    :show-inheritance:

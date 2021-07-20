@@ -1,7 +1,7 @@
-
 import pytest
 import spart
 import pandas as pd
+import numpy as np
 
 
 class SPART_Parameters(object):
@@ -14,7 +14,7 @@ class SPART_Parameters(object):
     """
     # define the entries required to run the SPART submodels
     SMB = ['B', 'lat', 'lon', 'SMp', 'SMC', 'film']  # soil model
-    prospect_5d = ['Cab', 'Cca', 'Cw', 'Cdm', 'Cs', 'Cant', 'N']  # leaf model
+    prospect_5d = ['Cab', 'Cca', 'Cw', 'Cdm', 'Cs', 'Cant', 'N', 'PROT', 'CBC']  # leaf model
     sailh = ['LAI', 'LIDFa', 'LIDFb', 'q']  # canopy model
     SMAC = ['aot550', 'uo3', 'uh2o', 'Pa']  # atmosphere model
     angles = ['sol_angle', 'obs_angle', 'rel_angle']  # sunobserver geometry
@@ -26,7 +26,8 @@ def run_spart():
     
     def _run_spart(parameters: pd.Series,
                   sensor_name: str,
-                  doy: int=100
+                  doy: int=100,
+                  debug: bool=True
                   ) -> pd.DataFrame:
         """
         runs the SPART model on a single parameter combination specified as pandas series
@@ -71,22 +72,38 @@ def run_spart():
                             angles=geometry,
                             sensor=sensor_name,
                             DOY=doy)
-        simulated = model.run()
+        # return soil reflectance values from BSM if debug is set to True
+        simulated = model.run(debug=debug)
         return simulated
     
     return _run_spart
 
 
-@pytest.mark.parametrize('fname_spart_params, sensor_name',
-                        [('spart_params1.csv', 'LANDSAT8-OLI')])
+@pytest.mark.parametrize('fname_spart_params',
+                        ['SPART_Prospect5D.csv',
+                         'SPART_ProspectPRO.csv'])
+@pytest.mark.parametrize('sensor_name',
+                        ['Sentinel2A-MSI',
+                         'Sentinel2B-MSI',
+                         'LANDSAT4-TM',
+                         'LANDSAT5-TM',
+                         'LANDSAT7-ETM',
+                         'LANDSAT8-OLI',
+                         'Sentinel3A-OLCI',
+                         'Sentinel3B-OLCI',
+                         'TerraAqua-MODIS'])
 def test_run_spart(datadir, run_spart, fname_spart_params, sensor_name):
-    """run SPART simulations on a number of input parameter combinations"""
+    """
+    Run SPART simulations on a number of input parameter combinations
+    Test both available leaf models, Prospect5-D and Prospect-Pro for
+    the available remote sensing sensors.
+    """
 
     # load SPART input parameters from the testdatadir
     testdata_file = datadir.join(fname_spart_params)
     spart_params = pd.read_csv(testdata_file)
 
-    # run simulations
+    # run simulations and check soil spectra (debug)
     for idx, params in spart_params.iterrows():
         
             sim_specs = run_spart(parameters=params,
@@ -95,6 +112,11 @@ def test_run_spart(datadir, run_spart, fname_spart_params, sensor_name):
             # (small negative values can result from extreme atmospheric conditions like
             # extremely high aot500 values or unrealistic air pressure values;
             # personnel communication with Olivier Hagolle from CNES (France) on 10th June 2021
-            assert all(sim_specs['L_TOA'] > -0.1), f'negative simulated TOA irradiances (spectrum #{idx})'
-            assert all(sim_specs['R_TOA'] > -0.1), f'negative simulated TOA reflectances (spectrum #{idx})'
-            assert all(sim_specs['R_TOC'] > -0.1), f'negative simulated TOC reflectances (spectrum #{idx})'
+            assert all(sim_specs['L_TOA'] > -0.15), \
+                f'negative simulated TOA irradiances (spectrum #{idx})'
+            assert all(sim_specs['R_TOA'] > -0.15), \
+                f'negative simulated TOA reflectances (spectrum #{idx})'
+            assert all(sim_specs['R_TOC'] > -0.15), \
+                f'negative simulated TOC reflectances (spectrum #{idx})'
+            assert all(sim_specs['rsoil'] > -0.15), \
+                f'negative simulated soil reflectances (spectrum #{idx})'
