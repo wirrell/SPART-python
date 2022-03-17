@@ -106,8 +106,9 @@ def SAILH(soil, leafopt, canopy, angles):
     Ps = np.exp(k * xl * LAI)  # of viewing a leaf in solar direction
     Po = np.exp(K * xl * LAI)  # of viewing a leaf in observation direction
 
-    Ps[0:nl] = Ps[0:nl] * (1 - np.exp(-k * LAI * dx)) / (k * LAI * dx)
-    Po[0:nl] = Po[0:nl] * (1 - np.exp(-k * LAI * dx)) / (k * LAI * dx)
+    if LAI > 0:
+        Ps[0:nl] = Ps[0:nl] * (1 - np.exp(-k * LAI * dx)) / (k * LAI * dx)
+        Po[0:nl] = Po[0:nl] * (1 - np.exp(-k * LAI * dx)) / (k * LAI * dx)
 
     q = canopy.q
     Pso = np.zeros(Po.shape)

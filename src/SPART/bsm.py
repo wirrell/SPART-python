@@ -11,7 +11,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from scipy.stats import poisson
-from .prospect_5d import calculate_tav
+from SPART.prospect_5d import calculate_tav
 
 
 def BSM(soilpar, soilspec):
@@ -189,7 +189,7 @@ class SoilParametersFromFile:
             self.film = film
 
         # Allow the rdry spectra to be passed directly to the object.
-        if isinstance(soil_file, np.array):
+        if isinstance(soil_file, np.ndarray):
             self.rdry = soil_file
         else:
             self.rdry = self._load_jpl_soil_refl(soil_file)

@@ -13,8 +13,10 @@ and other carbon-based constituents
 """
 import numpy as np
 import scipy.integrate as integrate
+from dataclasses import dataclass
 
 
+@dataclass
 class LeafBiology:
     """
     Class to hold leaf biology variables.
@@ -67,21 +69,20 @@ class LeafBiology:
     tau_thermal : float
         Transmittance in the thermal range. run_spart assumption: 0.01
     """
-
-    def __init__(self, Cab, Cca, Cw, Cdm, Cs, Cant, N, PROT=0.0, CBC=0.0):
-        self.Cab = Cab
-        self.Cca = Cca
-        self.Cw = Cw
-        self.Cdm = Cdm
-        self.Cs = Cs
-        self.Cant = Cant
-        self.N = N
-        self.PROT = PROT
-        self.CBC = CBC
-        self.rho_thermal = 0.01
-        self.tau_thermal = 0.01
+    Cab: float
+    Cca: float
+    Cw: float
+    Cdm: float
+    Cs: float
+    Cant: float
+    N: float
+    PROT: float = 0.0
+    CBC: float = 0.0
+    rho_thermal: float = 0.01
+    tau_thermal: float = 0.01
 
 
+@dataclass
 class LeafOptics:
     """
     Class to hold leaf optics information.
@@ -106,10 +107,9 @@ class LeafOptics:
         Relative portion of chlorophyll contribution to reflecntace
         / transmittance in the spectral range, 400 to 2400 nm
     """
-    def __init__(self, refl, tran, kChlrel):
-        self.refl = refl
-        self.tran = tran
-        self.kChlrel = kChlrel
+    refl: np.ndarray
+    tran: np.ndarray
+    kChlrel: np.ndarray
 
 
 def PROSPECT_5D(leafbio, optical_params):
@@ -227,6 +227,7 @@ def PROSPECT_5D(leafbio, optical_params):
     tran = Ta * Tsub / denom
     refl = Ra + Ta * Rsub * t / denom
 
+    # We flatten the arrays here so they go from (2001, 1), to (2001,)
     leafopt = LeafOptics(refl, tran, kChlrel)
 
     return leafopt
@@ -289,13 +290,3 @@ def calculate_tav(alpha, nr):
     tav = (ts + tp) / (2 * sa ** 2)
 
     return tav
-
-
-if __name__ == '__main__':
-    # Test cases, compare to original matlab outputs
-    from SPART import load_optical_parameters
-    leafbio = LeafBiology(40, 10, 0.02, 0.01, 0, 10, 1.5)
-    leafopt = PROSPECT_5D(leafbio, load_optical_parameters())
-    print(leafopt.tran)
-    print(leafopt.refl)
-    print(leafopt.kChlrel)

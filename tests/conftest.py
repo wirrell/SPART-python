@@ -3,10 +3,15 @@ Created on May 6, 2021
 
 @author: graflu
 '''
-
 import os
 import pytest
+import SPART
 from distutils import dir_util
+
+
+@pytest.fixture
+def optical_params():
+    return SPART.load_optical_parameters()
 
 
 @pytest.fixture
