@@ -1,0 +1,12 @@
+name: spart
+channels:
+  - defaults
+dependencies:
+  - numba
+  - pytest
+  - pytest-benchmark
+  - python=3.9
+  - conda-build
+  - pandas
+  - scipy
+prefix: /home/george/miniconda3/envs/spart
