@@ -158,50 +158,6 @@ class SPART:
         self._DOY = DOY
         self._tracker["DOY"] = True
 
-    def set_leaf_refl_trans_assumptions(self, leafopt, leafbio, spectral):
-        """Sets the model assumptions about soil and leaf reflectance and
-        transmittance in the thermal range.
-
-        These are that leaf relctance and
-        transmittance are 0.01 in the thermal range (this is
-        a model assumption that is set in the LeafBiology class in the prospect_5d 
-        script)
-
-        Returns
-        -------
-        LeafOptics
-        """
-        # Leaf reflectance array, spans 400 to 2400 nm in 1 nm increments
-        # then 2500 to 15000 in 100 nm increments
-        # then 16000 to 50000 in 1000 nm increments
-        rho = np.zeros((spectral.nwlP + spectral.nwlT, 1))
-        tau = np.zeros((spectral.nwlP + spectral.nwlT, 1))
-        rho[spectral.IwlT] = leafbio.rho_thermal
-        tau[spectral.IwlT] = leafbio.tau_thermal
-        rho[spectral.IwlP] = leafopt.refl
-        tau[spectral.IwlP] = leafopt.tran
-        leafopt.refl = rho
-        leafopt.tran = tau
-
-        return leafopt
-
-    def set_soil_refl_trans_assumptions(self, soilopt, spectral):
-        """Sets the model assumptions about soil and leaf reflectance and
-        transmittance in the thermal range.
-
-        These are that soil reflectance is the value for 2400 nm
-        in the entire thermal range 
-
-        Returns
-        -------
-        SoilOptics
-        """
-        rsoil = np.zeros((self.spectral.nwlP + self.spectral.nwlT, 1))
-        rsoil[spectral.IwlP] = soilopt.refl
-        rsoil[spectral.IwlT] = 1 * rsoil[spectral.nwlP - 1]
-        soilopt.refl = rsoil
-        return soilopt
-
     def run(self, debug=False):
         """Run the run_spart model.
 
@@ -234,7 +190,7 @@ class SPART:
             soilopt = BSM(self._soilpar, self.optipar)
             # Update soil optics refl and trans to include thermal
             # values from model assumptions
-            self.soilopt = self.set_soil_refl_trans_assumptions(soilopt, self.spectral)
+            self.soilopt = set_soil_refl_trans_assumptions(soilopt, self.spectral)
             self._tracker["soil"] = False
 
         # Run the PROSPECT model
@@ -242,7 +198,7 @@ class SPART:
             leafopt = PROSPECT_5D(self._leafbio, self.optipar)
             # Update leaf optics refl and trans to include thermal
             # values from model assumptions
-            self.leafopt = self.set_leaf_refl_trans_assumptions(
+            self.leafopt = set_leaf_refl_trans_assumptions(
                 leafopt, self.leafbio, self.spectral
             )
             self._tracker["leaf"] = False
@@ -460,11 +416,47 @@ def load_sensor_info(sensor):
     return sensor_info
 
 
-if __name__ == "__main__":
-    leafbio = LeafBiology(40, 10, 0.02, 0.01, 0, 10, 1.5)
-    soilpar = SoilParameters(0.5, 0, 100, 15)
-    canopy = CanopyStructure(3, -0.35, -0.15, 0.05)
-    angles = Angles(40, 0, 0)
-    atm = AtmosphericProperties(0.3246, 0.3480, 1.4116, 1013.25)
-    spart = SPART(soilpar, leafbio, canopy, atm, angles, "LANDSAT8-OLI", 100)
-    print(spart.run())
+def set_soil_refl_trans_assumptions(soilopt, spectral):
+    """Sets the model assumptions about soil and leaf reflectance and
+    transmittance in the thermal range.
+
+    These are that soil reflectance is the value for 2400 nm
+    in the entire thermal range 
+
+    Returns
+    -------
+    SoilOptics
+    """
+    rsoil = np.zeros((spectral.nwlP + spectral.nwlT, 1))
+    rsoil[spectral.IwlP] = soilopt.refl
+    rsoil[spectral.IwlT] = 1 * rsoil[spectral.nwlP - 1]
+    soilopt.refl = rsoil
+    return soilopt
+
+
+def set_leaf_refl_trans_assumptions(leafopt, leafbio, spectral):
+    """Sets the model assumptions about soil and leaf reflectance and
+    transmittance in the thermal range.
+
+    These are that leaf relctance and
+    transmittance are 0.01 in the thermal range (this is
+    a model assumption that is set in the LeafBiology class in the prospect_5d 
+    script)
+
+    Returns
+    -------
+    LeafOptics
+    """
+    # Leaf reflectance array, spans 400 to 2400 nm in 1 nm increments
+    # then 2500 to 15000 in 100 nm increments
+    # then 16000 to 50000 in 1000 nm increments
+    rho = np.zeros((spectral.nwlP + spectral.nwlT, 1))
+    tau = np.zeros((spectral.nwlP + spectral.nwlT, 1))
+    rho[spectral.IwlT] = leafbio.rho_thermal
+    tau[spectral.IwlT] = leafbio.tau_thermal
+    rho[spectral.IwlP] = leafopt.refl
+    tau[spectral.IwlP] = leafopt.tran
+    leafopt.refl = rho
+    leafopt.tran = tau
+
+    return leafopt

@@ -14,7 +14,7 @@ from scipy.stats import poisson
 from SPART.prospect_5d import calculate_tav
 
 
-def BSM(soilpar, soilspec):
+def BSM(soilpar, optical_params):
     """
     Run the BSM soil model
 
@@ -23,7 +23,7 @@ def BSM(soilpar, soilspec):
     soilpar : SoilParameters
         Object with attributes [B, lat, lon] / dry soil spectra, and SMp, SMC,
         film
-    soilspec : dict
+    optical_params : dict
         Contains keys ['GSV', 'kw', 'nw'] which key the Global Soil Vectors,
         water absorption constants for the spectrum and water refraction index
         for the spectrum. Loaded in in the main run_spart script and passed to this
@@ -42,7 +42,7 @@ def BSM(soilpar, soilspec):
     if soilpar.rdry_set:
         rdry = soilpar.rdry
     else:
-        GSV = soilspec["GSV"]  # Global Soil Vectors spectra
+        GSV = optical_params["GSV"]  # Global Soil Vectors spectra
         B = soilpar.B
         lat = soilpar.lat
         lon = soilpar.lon
@@ -51,8 +51,8 @@ def BSM(soilpar, soilspec):
         f3 = B * np.cos(lat * np.pi / 180) * np.cos(lon * np.pi / 180)
         rdry = f1 * GSV[:, [0]] + f2 * GSV[:, [1]] + f3 * GSV[:, [2]]
 
-    kw = soilspec["Kw"]  # Water absoprtion specturm
-    nw = soilspec["nw"]  # Water refraction index spectrum
+    kw = optical_params["Kw"]  # Water absoprtion specturm
+    nw = optical_params["nw"]  # Water refraction index spectrum
 
     rwet = soilwat(rdry, nw, kw, SMp, SMC, film)
 

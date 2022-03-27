@@ -31,6 +31,18 @@ def pytest_generate_tests(metafunc):
                 .iterrows()
             )
         metafunc.parametrize("prospect_test_case", tests)
+    if "sail_test_case" in metafunc.fixturenames:
+        if metafunc.config.getoption("all"):
+            tests = pd.read_parquet(
+                "test_SAILH/SAILH_test_cases.gzip"
+            ).iterrows()
+        else:
+            tests = (
+                pd.read_parquet("test_SAILH/SAILH_test_cases.gzip")
+                .sample(10, random_state=42)
+                .iterrows()
+            )
+        metafunc.parametrize("sail_test_case", tests)
 
 
 @pytest.fixture
