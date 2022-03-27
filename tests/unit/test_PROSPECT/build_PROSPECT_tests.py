@@ -8,7 +8,7 @@ from SPART.prospect_5d import LeafBiology, PROSPECT_5D
 
 def build_PROSPECT_5D_test_cases():
     value_combinations = leaf_value_combinations()
-    input_columns = ["Cab", "Cca", "Cw", "Cdm", "Cs", "Cant", "N"]
+    input_columns = ["Cab", "Cdm", "Cw", "Cs", "Cca", "Cant", "N"]
     refl_columns = [f"refl_{x}" for x in range(400, 2401)]
     tran_columns = [f"tran_{x}" for x in range(400, 2401)]
     kchl_columns = [f"kChlrel_{x}" for x in range(400, 2401)]
@@ -45,7 +45,7 @@ def leaf_value_combinations():
     Cant = np.arange(10, 35, 10)
     N = np.arange(1.0, 3.5, 0.5)
 
-    value_combinations = itertools.product(Cab, Cca, Cw, Cdm, Cs, Cant, N)
+    value_combinations = itertools.product(Cab, Cdm, Cw, Cs, Cca, Cant, N)
 
     return value_combinations
 
