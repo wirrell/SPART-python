@@ -35,11 +35,13 @@ def SAILH(soil, leafopt, canopy, angles):
     """
 
     if len(leafopt.refl) != 2162:
-        raise RuntimeError('Parameter leafopt.refl must be of len 2162'
-                           ' i.e. include thermal specturm. \n This error'
-                           ' usually occurs if you are feeding the prospect_5d'
-                           ' output directly into the SAILH model with adding'
-                           '\n the neccessary thermal wavelengths.')
+        raise RuntimeError(
+            "Parameter leafopt.refl must be of len 2162"
+            " i.e. include thermal specturm. \n This error"
+            " usually occurs if you are feeding the prospect_5d"
+            " output directly into the SAILH model with adding"
+            "\n the neccessary thermal wavelengths."
+        )
 
     deg2rad = np.pi / 180
 
@@ -47,7 +49,7 @@ def SAILH(soil, leafopt, canopy, angles):
     litab = np.array([*range(5, 80, 10), *range(81, 91, 2)])[:, np.newaxis]
     LAI = canopy.LAI
     lidf = canopy.lidf
-    xl = np.arange(0, -1 - (1/nl), -1 / nl)[:, np.newaxis]
+    xl = np.arange(0, -1 - (1 / nl), -1 / nl)[:, np.newaxis]
     dx = 1 / nl
     iLAI = LAI * dx
 
@@ -73,12 +75,12 @@ def SAILH(soil, leafopt, canopy, angles):
     sin_ttli = np.sin(litab * deg2rad)
     cos_ttli = np.cos(litab * deg2rad)
 
-    dso = np.sqrt(tan_tts ** 2 + tan_tto ** 2 - 2 * tan_tts * tan_tto *
-                  np.cos(psi_rad))
+    dso = np.sqrt(tan_tts ** 2 + tan_tto ** 2 - 2 * tan_tts * tan_tto * np.cos(psi_rad))
 
     # geometric factors associated with extinction and scattering
-    chi_s, chi_o, frho, ftau = _volscatt(sin_tts, cos_tts, sin_tto, cos_tto,
-                                         psi_rad, sin_ttli, cos_ttli)
+    chi_s, chi_o, frho, ftau = _volscatt(
+        sin_tts, cos_tts, sin_tto, cos_tto, psi_rad, sin_ttli, cos_ttli
+    )
     # extinction coefficient in direction of sun per
     ksli = chi_s / cos_tts  # leaf angle
     koli = chi_o / cos_tto  # observer angle
@@ -117,16 +119,20 @@ def SAILH(soil, leafopt, canopy, angles):
         # From APPENDIX IV of original matlab code
         if dso != 0:
             alpha = (dso / q) * 2 / (k + K)
-            pso = np.exp((K + k) * LAI * x + np.sqrt(K * k) * LAI / alpha *
-                         (1 - np.exp(x * alpha)))
+            pso = np.exp(
+                (K + k) * LAI * x
+                + np.sqrt(K * k) * LAI / alpha * (1 - np.exp(x * alpha))
+            )
         else:
             pso = np.exp((K + k) * LAI * x - np.sqrt(K * k) * LAI * x)
 
         return pso
 
     for j in range(len(xl)):
-        Pso[j, :] = integrate.quad(Psofunction, xl[j] - dx, xl[j],
-                                   args=(K, k, LAI, q, dso))[0] / dx
+        Pso[j, :] = (
+            integrate.quad(Psofunction, xl[j] - dx, xl[j], args=(K, k, LAI, q, dso))[0]
+            / dx
+        )
 
     # NOTE: there are two lines in the original script here that deal with
     # rounding errors. I have excluded them. If this becomes a problem see
@@ -154,15 +160,20 @@ def SAILH(soil, leafopt, canopy, angles):
         CN = np.where(~sing)
 
         J1[CN] = (np.exp(m[CN] * LAI * x) - np.exp(k * LAI * x)) / (k - m[CN])
-        J1[CS] = -0.5 * (np.exp(m[CS] * LAI * x) + np.exp(k * LAI * x)) * LAI \
-            * x * (1 - 1/12 * (k - m[CS]) ** 2 * LAI ** 2)
+        J1[CS] = (
+            -0.5
+            * (np.exp(m[CS] * LAI * x) + np.exp(k * LAI * x))
+            * LAI
+            * x
+            * (1 - 1 / 12 * (k - m[CS]) ** 2 * LAI ** 2)
+        )
         return J1
 
     def calcJ2(x, m, k, LAI):
         # For getting numerically stable solutions
-        J2 = (np.exp(k * LAI * x) - np.exp(-k * LAI) * np.exp(-m * LAI *
-                                                              (1 + x))
-              ) / (k + m)
+        J2 = (np.exp(k * LAI * x) - np.exp(-k * LAI) * np.exp(-m * LAI * (1 + x))) / (
+            k + m
+        )
         return J2
 
     # direct solar radiation
@@ -198,12 +209,11 @@ def SAILH(soil, leafopt, canopy, angles):
     rho_sd = (Qss - re * Pss) / denom
     rho_do = (Qoo - re * Poo) / denom
 
-    T1 = v2 * s1 * (Z - J1k * tau_oo) / (K + m) + v1 * s2 * (Z - J1K * tau_ss)\
-        / (k + m)
+    T1 = v2 * s1 * (Z - J1k * tau_oo) / (K + m) + v1 * s2 * (Z - J1K * tau_ss) / (k + m)
     T2 = -(Qoo * rho_sd + Poo * tau_sd) * rinf
     rho_sod = (T1 + T2) / (1 - rinf2)
 
-    rho_sos = w * np.sum(Pso[0: nl]) * iLAI
+    rho_sos = w * np.sum(Pso[0:nl]) * iLAI
     rho_so = rho_sod + rho_sos
 
     Pso2w = Pso[nl]
@@ -211,9 +221,13 @@ def SAILH(soil, leafopt, canopy, angles):
     # Sail analytical reflectances
     denom = 1 - rs * rho_dd
 
-    rso = rho_so + rs * Pso2w + (
-        (tau_sd + tau_ss * rs * rho_dd) * tau_oo + (tau_sd + tau_ss) * tau_do)\
-        * rs / denom
+    rso = (
+        rho_so
+        + rs * Pso2w
+        + ((tau_sd + tau_ss * rs * rho_dd) * tau_oo + (tau_sd + tau_ss) * tau_do)
+        * rs
+        / denom
+    )
     rdo = rho_do + (tau_oo + tau_do) * rs * tau_dd / denom
     rsd = rho_sd + (tau_ss + tau_sd) * rs * tau_dd / denom
     rdd = rho_dd + tau_dd * rs * tau_dd / denom
@@ -225,6 +239,7 @@ def SAILH(soil, leafopt, canopy, angles):
 
 class CanopyReflectances:
     """CanopyReflectances"""
+
     """Class to hold canopy reflectances computed by the SAILH model.
 
     Parameters
@@ -249,6 +264,7 @@ class CanopyReflectances:
     rdd : np.array
         Diffuse reflectance for diffuse incidence of the canopy
     """
+
     def __init__(self, rso, rdo, rsd, rdd):
         self.rso = rso
         self.rdo = rdo
@@ -278,6 +294,7 @@ class Angles:
     rel_angle : float
         Relative azimuth angle, degrees
     """
+
     def __init__(self, sol_angle, obs_angle, rel_angle):
         self.sol_angle = sol_angle
         self.obs_angle = obs_angle
@@ -319,6 +336,7 @@ class CanopyStructure:
     lidf : np.array
         Leaf inclination distribution function, calculated from LIDF params
     """
+
     def __init__(self, LAI, LIDFa, LIDFb, q):
         self.LAI = LAI
         self.LIDFa = LIDFa
@@ -346,6 +364,7 @@ def calculate_leafangles(LIDFa, LIDFb):
     np.array
         Leaf inclination distribution function, calculated from LIDF
     """
+
     def dcum(a, b, theta):
         # Calculate cumulative distribution
         rd = np.pi / 180

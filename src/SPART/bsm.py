@@ -42,7 +42,7 @@ def BSM(soilpar, soilspec):
     if soilpar.rdry_set:
         rdry = soilpar.rdry
     else:
-        GSV = soilspec['GSV']  # Global Soil Vectors spectra
+        GSV = soilspec["GSV"]  # Global Soil Vectors spectra
         B = soilpar.B
         lat = soilpar.lat
         lon = soilpar.lon
@@ -51,8 +51,8 @@ def BSM(soilpar, soilspec):
         f3 = B * np.cos(lat * np.pi / 180) * np.cos(lon * np.pi / 180)
         rdry = f1 * GSV[:, [0]] + f2 * GSV[:, [1]] + f3 * GSV[:, [2]]
 
-    kw = soilspec['Kw']  # Water absoprtion specturm
-    nw = soilspec['nw']  # Water refraction index spectrum
+    kw = soilspec["Kw"]  # Water absoprtion specturm
+    nw = soilspec["nw"]  # Water refraction index spectrum
 
     rwet = soilwat(rdry, nw, kw, SMp, SMC, film)
 
@@ -107,8 +107,9 @@ def soilwat(rdry, nw, kw, SMp, SMC, deleff):
         # Uses t_av calculation from PROSPECT-5D model. If you want BSM
         # script to operate independently you will need to paste that
         # function in here.
-        rbac = 1 - (1 - rdry) * (rdry * calculate_tav(90, 2 / nw) /
-                                 calculate_tav(90, 2) + 1 - rdry)
+        rbac = 1 - (1 - rdry) * (
+            rdry * calculate_tav(90, 2 / nw) / calculate_tav(90, 2) + 1 - rdry
+        )
 
         # total reflectance at bottom of water film surface
         p = 1 - calculate_tav(90, nw) / nw ** 2
@@ -120,8 +121,7 @@ def soilwat(rdry, nw, kw, SMp, SMC, deleff):
         fmul = poisson.pmf(k, mu)
         tw = np.exp(-2 * kw * deleff * k)
         Rwet_k = Rw + (1 - Rw) * (1 - p) * tw * rbac / (1 - p * tw * rbac)
-        rwet = (rdry * fmul[0]) + Rwet_k[:, 1:nk].dot(fmul[1:nk])[:,
-                                                                  np.newaxis]
+        rwet = (rdry * fmul[0]) + Rwet_k[:, 1:nk].dot(fmul[1:nk])[:, np.newaxis]
 
     soilopt = SoilOptics(rwet, rdry)
 
@@ -146,6 +146,7 @@ class SoilOptics:
     refl_dry : np.array
         Dry soil reflectance spectra
     """
+
     def __init__(self, refl, refl_dry):
         self.refl = refl
         self.refl_dry = refl_dry
@@ -175,6 +176,7 @@ class SoilParametersFromFile:
         Array containing soil reflectance spectrum extracted from file and
         interpolated to 1 nm intervals between 400 nm and 2400 nm
     """
+
     def __init__(self, soil_file, SMp, SMC=None, film=None):
         if isinstance(SMC, type(None)):
             warnings.warn("BSM soil model: SMC not supplied, set to default of 25 %")
@@ -199,8 +201,9 @@ class SoilParametersFromFile:
     def _load_jpl_soil_refl(self, file_path):
         """Load and format the JPL supplied soil reflectance file."""
         # Load in table
-        soil_refl = pd.read_csv(file_path, sep='\t', skiprows=21,
-                                index_col=0, header=None)
+        soil_refl = pd.read_csv(
+            file_path, sep="\t", skiprows=21, index_col=0, header=None
+        )
         # turn micrometers index to nanometers
         soil_refl.index = soil_refl.index * 1000
         # convert percentage reflectance to fraction
@@ -217,7 +220,7 @@ class SoilParametersFromFile:
                 soil_refl.loc[wl, 1] = np.nan
         soil_refl = soil_refl.sort_index()
 
-        soil_refl = soil_refl.interpolate('linear')
+        soil_refl = soil_refl.interpolate("linear")
         soil_refl = soil_refl.loc[wls].to_numpy()
 
         return soil_refl
@@ -262,29 +265,32 @@ class SoilParameters:
         False. Declares that the object doesnt' contain a dry soil reflectance
         spectra
     """
+
     def __init__(self, B, lat, lon, SMp, SMC=None, film=None):
         self.B = B
         self.lat = lat
         self.lon = lon
         self.SMp = SMp
         if isinstance(SMC, type(None)):
-            warnings.warn("BSM soil model: SMC not supplied,"
-                          " set to default of 25 %")
+            warnings.warn("BSM soil model: SMC not supplied," " set to default of 25 %")
             self.SMC = 25
         else:
             self.SMC = SMC
         if isinstance(film, type(None)):
-            warnings.warn("BSM soil model: water film optical thickness"
-                          " not supplied, set to default of 0.0150 cm")
+            warnings.warn(
+                "BSM soil model: water film optical thickness"
+                " not supplied, set to default of 0.0150 cm"
+            )
             self.film = 0.0150
         else:
             self.film = film
         self.rdry_set = False
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Test cases, compare to original matlab outputs
     from SPART import load_optical_parameters
+
     soilpar = SoilParameters(0.5, 0, 100, 15)
     soilopt = BSM(soilpar, load_optical_parameters())
     print(soilopt.refl)

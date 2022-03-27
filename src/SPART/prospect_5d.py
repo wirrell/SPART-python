@@ -69,6 +69,7 @@ class LeafBiology:
     tau_thermal : float
         Transmittance in the thermal range. run_spart assumption: 0.01
     """
+
     Cab: float
     Cca: float
     Cw: float
@@ -107,6 +108,7 @@ class LeafOptics:
         Relative portion of chlorophyll contribution to reflecntace
         / transmittance in the spectral range, 400 to 2400 nm
     """
+
     refl: np.ndarray
     tran: np.ndarray
     kChlrel: np.ndarray
@@ -137,34 +139,44 @@ def PROSPECT_5D(leafbio, optical_params):
     Cs = leafbio.Cs
     Cant = leafbio.Cant
     N = leafbio.N
-    PROT = leafbio.PROT     # PROSPECT-PRO
-    CBC = leafbio.CBC       # PROSPECT-PRO
+    PROT = leafbio.PROT  # PROSPECT-PRO
+    CBC = leafbio.CBC  # PROSPECT-PRO
 
     # check if PROT and/or CBC are non-zero. If true, PROSPECT-PRO is run.
     # Before, check if the parameterization is physically plausible
     # (Cdm = PROT + CBC)
-    if PROT > 0. or CBC > 0.:
+    if PROT > 0.0 or CBC > 0.0:
         if Cdm > 0:
-            print('WARNING: When setting PROT and/or CBC > 0. we\n' \
-                  'assume that PROSPECT-PRO was called. Cdm will be\n' \
-                  'therefore set to zero (Cdm = PROT + CBC)')
-            Cdm = 0.
+            print(
+                "WARNING: When setting PROT and/or CBC > 0. we\n"
+                "assume that PROSPECT-PRO was called. Cdm will be\n"
+                "therefore set to zero (Cdm = PROT + CBC)"
+            )
+            Cdm = 0.0
 
     # Model constants
-    nr = optical_params['nr']
-    Kdm = optical_params['Kdm']
-    Kab = optical_params['Kab']
-    Kca = optical_params['Kca']
-    Kw = optical_params['Kw']
-    Ks = optical_params['Ks']
-    Kant = optical_params['Kant']
+    nr = optical_params["nr"]
+    Kdm = optical_params["Kdm"]
+    Kab = optical_params["Kab"]
+    Kca = optical_params["Kca"]
+    Kw = optical_params["Kw"]
+    Ks = optical_params["Ks"]
+    Kant = optical_params["Kant"]
     # add PROSPECT-PRO optical parameters (Féret et al., 2021)
-    kcbc = optical_params['cbc']
-    kprot = optical_params['prot']
+    kcbc = optical_params["cbc"]
+    kprot = optical_params["prot"]
 
     # Compact leaf layer
-    Kall = (Cab * Kab + Cca * Kca + Cdm * Kdm + Cw * Kw + Cs * Ks +
-            Cant * Kant + CBC * kcbc + PROT * kprot) / N
+    Kall = (
+        Cab * Kab
+        + Cca * Kca
+        + Cdm * Kdm
+        + Cw * Kw
+        + Cs * Ks
+        + Cant * Kant
+        + CBC * kcbc
+        + PROT * kprot
+    ) / N
 
     # Non-conservative scattering (normal case)
     j = np.where(Kall > 0)[0]
@@ -176,6 +188,7 @@ def PROSPECT_5D(leafbio, optical_params):
         # Exponential integral from expint command in matlab
         def intergrand(t):
             return np.exp(-t) / t
+
         return integrate.quad(intergrand, x, np.inf)
 
     t2 = Kall ** 2 * np.vectorize(expint)(Kall)[0]
@@ -274,18 +287,24 @@ def calculate_tav(alpha, nr):
     b = b1 - b2
     b3 = b ** 3
     a3 = a ** 3
-    ts = (k ** 2 / (6 * b3) + k / b - b / 2) - (k ** 2 / (6 * a3) + k / a
-                                                - a / 2)
+    ts = (k ** 2 / (6 * b3) + k / b - b / 2) - (k ** 2 / (6 * a3) + k / a - a / 2)
 
     tp1 = -2 * n2 * (b - a) / (n_p ** 2)
     tp2 = -2 * n2 * n_p * np.log(b / a) / (nm ** 2)
     tp3 = n2 * (1 / b - 1 / a) / 2
-    tp4 = (16 * n2 ** 2 * (n2 ** 2 + 1) * np.log((2 * n_p * b - nm ** 2) /
-                                                 (2 * n_p * a - nm ** 2))
-           / (n_p ** 3 * nm ** 2))
-    tp5 = (16 * n2 ** 3 * (1 / (2 * n_p * b - nm ** 2) - 1 / (2 * n_p * a -
-                                                              nm ** 2))
-           / n_p ** 3)
+    tp4 = (
+        16
+        * n2 ** 2
+        * (n2 ** 2 + 1)
+        * np.log((2 * n_p * b - nm ** 2) / (2 * n_p * a - nm ** 2))
+        / (n_p ** 3 * nm ** 2)
+    )
+    tp5 = (
+        16
+        * n2 ** 3
+        * (1 / (2 * n_p * b - nm ** 2) - 1 / (2 * n_p * a - nm ** 2))
+        / n_p ** 3
+    )
     tp = tp1 + tp2 + tp3 + tp4 + tp5
     tav = (ts + tp) / (2 * sa ** 2)
 

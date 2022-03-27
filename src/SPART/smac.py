@@ -41,55 +41,55 @@ def SMAC(angles, atm, coefs):
     uo3 = atm.uo3
     uh2o = atm.uh2o
 
-    ah2o = coefs['ah2o']
-    nh2o = coefs['nh2o']
-    ao3 = coefs['ao3']
-    no3 = coefs['no3']
-    ao2 = coefs['ao2']
-    no2 = coefs['no2']
-    po2 = coefs['po2']
-    aco2 = coefs['aco2']
-    nco2 = coefs['nco2']
-    pco2 = coefs['pco2']
-    ach4 = coefs['ach4']
-    nch4 = coefs['nch4']
-    pch4 = coefs['pch4']
-    ano2 = coefs['ano2']
-    nno2 = coefs['nno2']
-    pno2 = coefs['pno2']
-    aco = coefs['aco']
-    nco = coefs['nco']
-    pco = coefs['pco']
-    a0s = coefs['a0s']
-    a1s = coefs['a1s']
-    a2s = coefs['a2s']
-    a3s = coefs['a3s']
-    a0T = coefs['a0T']
-    a1T = coefs['a1T']
-    a2T = coefs['a2T']
-    a3T = coefs['a3T']
-    taur = coefs['taur']
+    ah2o = coefs["ah2o"]
+    nh2o = coefs["nh2o"]
+    ao3 = coefs["ao3"]
+    no3 = coefs["no3"]
+    ao2 = coefs["ao2"]
+    no2 = coefs["no2"]
+    po2 = coefs["po2"]
+    aco2 = coefs["aco2"]
+    nco2 = coefs["nco2"]
+    pco2 = coefs["pco2"]
+    ach4 = coefs["ach4"]
+    nch4 = coefs["nch4"]
+    pch4 = coefs["pch4"]
+    ano2 = coefs["ano2"]
+    nno2 = coefs["nno2"]
+    pno2 = coefs["pno2"]
+    aco = coefs["aco"]
+    nco = coefs["nco"]
+    pco = coefs["pco"]
+    a0s = coefs["a0s"]
+    a1s = coefs["a1s"]
+    a2s = coefs["a2s"]
+    a3s = coefs["a3s"]
+    a0T = coefs["a0T"]
+    a1T = coefs["a1T"]
+    a2T = coefs["a2T"]
+    a3T = coefs["a3T"]
+    taur = coefs["taur"]
     # sr = coefs['sr']
-    a0taup = coefs['a0taup']
-    a1taup = coefs['a1taup']
-    wo = coefs['wo']
-    gc = coefs['gc']
-    a0P = coefs['a0P']
-    a1P = coefs['a1P']
-    a2P = coefs['a2P']
-    a3P = coefs['a3P']
-    a4P = coefs['a4P']
-    Rest1 = coefs['Rest1']
-    Rest2 = coefs['Rest2']
-    Rest3 = coefs['Rest3']
-    Rest4 = coefs['Rest4']
-    Resr1 = coefs['Resr1']
-    Resr2 = coefs['Resr2']
-    Resr3 = coefs['Resr3']
-    Resa1 = coefs['Resa1']
-    Resa2 = coefs['Resa2']
-    Resa3 = coefs['Resa3']
-    Resa4 = coefs['Resa4']
+    a0taup = coefs["a0taup"]
+    a1taup = coefs["a1taup"]
+    wo = coefs["wo"]
+    gc = coefs["gc"]
+    a0P = coefs["a0P"]
+    a1P = coefs["a1P"]
+    a2P = coefs["a2P"]
+    a3P = coefs["a3P"]
+    a4P = coefs["a4P"]
+    Rest1 = coefs["Rest1"]
+    Rest2 = coefs["Rest2"]
+    Rest3 = coefs["Rest3"]
+    Rest4 = coefs["Rest4"]
+    Resr1 = coefs["Resr1"]
+    Resr2 = coefs["Resr2"]
+    Resr3 = coefs["Resr3"]
+    Resa1 = coefs["Resa1"]
+    Resa2 = coefs["Resa2"]
+    Resa3 = coefs["Resa3"]
+    Resa4 = coefs["Resa4"]
 
     cdr = np.pi / 180
     crd = 180 / np.pi
@@ -126,8 +126,9 @@ def SMAC(angles, atm, coefs):
     ttetav = a0T + a1T * taup550 / uv + (a2T * Peq + a3T) / (1 + uv)
 
     # scattering angle cosine
-    cksi = - ((us * uv) + (np.sqrt(1 - us * us) * np.sqrt(1 - uv * uv) *
-                           np.cos(psi * crd)))
+    cksi = -(
+        (us * uv) + (np.sqrt(1 - us * us) * np.sqrt(1 - uv * uv) * np.cos(psi * crd))
+    )
 
     # hard limit on cksi -> from original matlab
     if cksi < -1:
@@ -142,8 +143,9 @@ def SMAC(angles, atm, coefs):
     ray_ref = ray_ref * Pa / 1013.25  # correction for pressure variation
     taurz = taur * Peq  # Eq 12
 
-    aer_phase = a0P + a1P * ksiD + a2P * ksiD * ksiD + a3P * ksiD ** 3 + \
-        a4P * ksiD ** 4  # extension of Eq 17
+    aer_phase = (
+        a0P + a1P * ksiD + a2P * ksiD * ksiD + a3P * ksiD ** 3 + a4P * ksiD ** 4
+    )  # extension of Eq 17
     ak2 = (1 - wo) * (3 - wo * 3 * gc)
     ak = np.sqrt(ak2)
 
@@ -153,17 +155,14 @@ def SMAC(angles, atm, coefs):
     dp = e / (3 * us) + us * f
     d = e + f
     b = 2 * ak / (3 - wo * 3 * gc)
-    delta = np.exp(ak * taup) * (1 + b) ** 2 - np.exp(-ak * taup) * \
-        (1 - b) ** 2
+    delta = np.exp(ak * taup) * (1 + b) ** 2 - np.exp(-ak * taup) * (1 - b) ** 2
     ww = wo / 4
     ss = us / (1 - ak2 * us * us)
     q1 = 2 + 3 * us + (1 - wo) * 3 * gc * us * (1 + 2 * us)
     q2 = 2 - 3 * us - (1 - wo) * 3 * gc * us * (1 - 2 * us)
     q3 = q2 * np.exp(-taup / us)
-    c1 = ((ww * ss) / delta) * (q1 * np.exp(ak * taup) * (1 + b) + q3 *
-                                (1 - b))
-    c2 = -((ww * ss) / delta) * (q1 * np.exp(-ak * taup) * (1 - b) + q3 *
-                                 (1 + b))
+    c1 = ((ww * ss) / delta) * (q1 * np.exp(ak * taup) * (1 + b) + q3 * (1 - b))
+    c2 = -((ww * ss) / delta) * (q1 * np.exp(-ak * taup) * (1 - b) + q3 * (1 + b))
     cp1 = c1 * ak / (3 - wo * 3 * gc)
     cp2 = -c2 * ak / (3 - wo * 3 * gc)
     z = d - wo * 3 * gc * uv * dp + wo * aer_phase / 4
@@ -180,18 +179,23 @@ def SMAC(angles, atm, coefs):
     aer_ref = (aer_ref1 + aer_ref2 + aer_ref3) / (us * uv)
 
     # Residual rayleigh (not in the paper)
-    Res_ray = Resr1 + Resr2 * taur * ray_phase / (us * uv) + Resr3 * \
-        ((taur * ray_phase / (us * uv)) ** 2)
+    Res_ray = (
+        Resr1
+        + Resr2 * taur * ray_phase / (us * uv)
+        + Resr3 * ((taur * ray_phase / (us * uv)) ** 2)
+    )
 
     # Residual aerosol
-    Res_aer = (Resa1 + Resa2 * (taup * m * cksi) + Resa3 *
-               ((taup * m * cksi) ** 2)) + Resa4 * (taup*m*cksi) ** 3
+    Res_aer = (
+        Resa1 + Resa2 * (taup * m * cksi) + Resa3 * ((taup * m * cksi) ** 2)
+    ) + Resa4 * (taup * m * cksi) ** 3
 
     # Term coupling molecule / aerosol
     tautot = taup + taurz
 
-    Res_6s = (Rest1 + Rest2 * (tautot * m * cksi) + Rest3 *
-              ((tautot * m * cksi) ** 2)) + Rest4 * ((tautot * m * cksi) ** 3)
+    Res_6s = (
+        Rest1 + Rest2 * (tautot * m * cksi) + Rest3 * ((tautot * m * cksi) ** 2)
+    ) + Rest4 * ((tautot * m * cksi) ** 3)
 
     # Total atmospheric reflectance
     atm_ref = ray_ref - Res_ray + aer_ref - Res_aer + Res_6s
@@ -202,8 +206,9 @@ def SMAC(angles, atm, coefs):
     tdif_tts = ttetas - tdir_tts
     tdif_ttv = ttetav - tdir_ttv
 
-    atm_opts = AtmosphericOptics(ttetas, ttetav, tg, s, atm_ref, tdir_tts,
-                                 tdif_tts, tdir_ttv, tdif_ttv)
+    atm_opts = AtmosphericOptics(
+        ttetas, ttetav, tg, s, atm_ref, tdir_tts, tdif_tts, tdir_ttv, tdif_ttv
+    )
 
     return atm_opts
 
@@ -254,8 +259,8 @@ class AtmosphericOptics:
     Ta_do : np.array
         Hemispherical transmittance for direct incidence (in viewing direction)
     """
-    def __init__(self, Ta_s, Ta_o, Tg, Ra_dd, Ra_so, Ta_ss, Ta_sd, Ta_oo,
-                 Ta_do):
+
+    def __init__(self, Ta_s, Ta_o, Tg, Ra_dd, Ra_so, Ta_ss, Ta_sd, Ta_oo, Ta_do):
         self.Ta_s = Ta_s
         self.Ta_o = Ta_o
         self.Tg = Tg
@@ -298,13 +303,13 @@ class AtmosphericProperties:
     Pa : float
         Air pressure, hPa
     """
+
     def __init__(self, aot550, uo3, uh2o, Pa=None, alt_m=None, temp_k=None):
         self.aot550 = aot550
         self.uo3 = uo3
         self.uh2o = uh2o
         if isinstance(Pa, type(None)):
-            if not isinstance(alt_m, type(None)) and not isinstance(
-                    temp_k, type(None)):
+            if not isinstance(alt_m, type(None)) and not isinstance(temp_k, type(None)):
                 self.Pa = _calculate_pressure_from_altitude(alt_m, temp_k)
             else:
                 self.Pa = 1013.25

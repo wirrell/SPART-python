@@ -30,6 +30,7 @@ from SPART.smac import SMAC, AtmosphericProperties
 # TODO: look at threading bsm and PROSPECT as they don't require each
 # other
 
+
 class SPART:
     """
     run_spart model.
@@ -77,6 +78,7 @@ class SPART:
     L_TOA : np.array
         Top of atmosphere radiance
     """
+
     def __init__(self, soilpar, leafbio, canopy, atm, angles, sensor, DOY):
         self._tracker = {}  # tracks changes to input parameters
         self.soilpar = soilpar
@@ -93,19 +95,6 @@ class SPART:
 
         # Initialize arrays
 
-        # Leaf reflectance array, spans 400 to 2400 nm in 1 nm increments
-        # then 2500 to 15000 in 100 nm increments
-        # then 16000 to 50000 in 1000 nm increments
-        self._rho = np.zeros((self.spectral.nwlP + self.spectral.nwlT, 1))
-        # Leaf transmittance array, as above
-        self._tau = np.zeros((self.spectral.nwlP + self.spectral.nwlT, 1))
-        # Soil reflectance array, as above
-        self._rsoil = np.zeros((self.spectral.nwlP + self.spectral.nwlT, 1))
-
-        # Set the model reflectance and transmittance assumptions
-        self.set_refl_trans_assumptions()
-
-
     @property
     def soilpar(self):
         return self._soilpar
@@ -113,7 +102,7 @@ class SPART:
     @soilpar.setter
     def soilpar(self, soilpar):
         self._soilpar = soilpar
-        self._tracker['soil'] = True
+        self._tracker["soil"] = True
 
     @property
     def leafbio(self):
@@ -122,7 +111,7 @@ class SPART:
     @leafbio.setter
     def leafbio(self, leafbio):
         self._leafbio = leafbio
-        self._tracker['leaf'] = True
+        self._tracker["leaf"] = True
 
     @property
     def canopy(self):
@@ -131,7 +120,7 @@ class SPART:
     @canopy.setter
     def canopy(self, canopy):
         self._canopy = canopy
-        self._tracker['canp'] = True
+        self._tracker["canp"] = True
 
     @property
     def atm(self):
@@ -140,7 +129,7 @@ class SPART:
     @atm.setter
     def atm(self, atm):
         self._atm = atm
-        self._tracker['atm'] = True
+        self._tracker["atm"] = True
 
     @property
     def angles(self):
@@ -149,7 +138,7 @@ class SPART:
     @angles.setter
     def angles(self, angles):
         self._angles = angles
-        self._tracker['angles'] = True
+        self._tracker["angles"] = True
 
     @property
     def sensor(self):
@@ -158,7 +147,7 @@ class SPART:
     @sensor.setter
     def sensor(self, sensor):
         self._sensor = sensor
-        self._tracker['sensor'] = True
+        self._tracker["sensor"] = True
 
     @property
     def DOY(self):
@@ -167,25 +156,51 @@ class SPART:
     @DOY.setter
     def DOY(self, DOY):
         self._DOY = DOY
-        self._tracker['DOY'] = True
+        self._tracker["DOY"] = True
 
-    def set_refl_trans_assumptions(self):
+    def set_leaf_refl_trans_assumptions(self, leafopt, leafbio, spectral):
         """Sets the model assumptions about soil and leaf reflectance and
         transmittance in the thermal range.
 
-        These are that soil reflectance is the value for 2400 nm
-        in the entire thermal range and that leaf relctance and
+        These are that leaf relctance and
         transmittance are 0.01 in the thermal range (this is
-        a model assumption that is set in the LeafBiology class in the bsm
+        a model assumption that is set in the LeafBiology class in the prospect_5d 
         script)
 
         Returns
         -------
-        None
+        LeafOptics
         """
-        self._rho[self.spectral.IwlT] = self.leafbio.rho_thermal
-        self._tau[self.spectral.IwlT] = self.leafbio.tau_thermal
-        self._rsoil[self.spectral.IwlT] = 1
+        # Leaf reflectance array, spans 400 to 2400 nm in 1 nm increments
+        # then 2500 to 15000 in 100 nm increments
+        # then 16000 to 50000 in 1000 nm increments
+        rho = np.zeros((spectral.nwlP + spectral.nwlT, 1))
+        tau = np.zeros((spectral.nwlP + spectral.nwlT, 1))
+        rho[spectral.IwlT] = leafbio.rho_thermal
+        tau[spectral.IwlT] = leafbio.tau_thermal
+        rho[spectral.IwlP] = leafopt.refl
+        tau[spectral.IwlP] = leafopt.tran
+        leafopt.refl = rho
+        leafopt.tran = tau
+
+        return leafopt
+
+    def set_soil_refl_trans_assumptions(self, soilopt, spectral):
+        """Sets the model assumptions about soil and leaf reflectance and
+        transmittance in the thermal range.
+
+        These are that soil reflectance is the value for 2400 nm
+        in the entire thermal range 
+
+        Returns
+        -------
+        SoilOptics
+        """
+        rsoil = np.zeros((self.spectral.nwlP + self.spectral.nwlT, 1))
+        rsoil[spectral.IwlP] = soilopt.refl
+        rsoil[spectral.IwlT] = 1 * rsoil[spectral.nwlP - 1]
+        soilopt.refl = rsoil
+        return soilopt
 
     def run(self, debug=False):
         """Run the run_spart model.
@@ -203,64 +218,54 @@ class SPART:
             'R_TOA' 'R_TOC' index by central band wavelength
         """
         # Calculate ET radiance from the sun fo look angles and DOY
-        if self._tracker['DOY'] or self._tracker['angles']:
+        if self._tracker["DOY"] or self._tracker["angles"]:
             # Calculate extra-terrestrial radiance for the day
-            Ra = calculate_ET_radiance(self.ETpar['Ea'], self.DOY,
-                                       self.angles.sol_angle)
-            self._La = calculate_spectral_convolution(self.ETpar['wl_Ea'], Ra,
-                                                      self.sensorinfo)
-            self._tracker['DOY'] = False
-            self._tracker['angles'] = False
+            Ra = calculate_ET_radiance(
+                self.ETpar["Ea"], self.DOY, self.angles.sol_angle
+            )
+            self._La = calculate_spectral_convolution(
+                self.ETpar["wl_Ea"], Ra, self.sensorinfo
+            )
+            self._tracker["DOY"] = False
+            self._tracker["angles"] = False
 
         # Run the bsm model
-        if self._tracker['soil']:
+        if self._tracker["soil"]:
             soilopt = BSM(self._soilpar, self.optipar)
             # Update soil optics refl and trans to include thermal
             # values from model assumptions
-            self._rsoil[self.spectral.IwlP] = soilopt.refl
-            self._rsoil[self.spectral.IwlT] = 1 * self._rsoil[self.spectral.nwlP
-                                                            - 1]
-            soilopt.refl = self._rsoil
-            self.soilopt = soilopt
-            self._tracker['soil'] = False
+            self.soilopt = self.set_soil_refl_trans_assumptions(soilopt, self.spectral)
+            self._tracker["soil"] = False
 
         # Run the PROSPECT model
-        if self._tracker['leaf']:
+        if self._tracker["leaf"]:
             leafopt = PROSPECT_5D(self._leafbio, self.optipar)
             # Update leaf optics refl and trans to include thermal
             # values from model assumptions
-            self._rho[self.spectral.IwlP] = leafopt.refl
-            self._tau[self.spectral.IwlP] = leafopt.tran
-            leafopt.refl = self._rho
-            leafopt.tran = self._tau
-            self.leafopt = leafopt
-            self._tracker['leaf'] = False
-
+            self.leafopt = self.set_leaf_refl_trans_assumptions(
+                leafopt, self.leafbio, self.spectral
+            )
+            self._tracker["leaf"] = False
 
         # Run the SAIL model
         rad = SAILH(self.soilopt, self.leafopt, self._canopy, self._angles)
         self.canopyopt = rad
 
-        sensor_wavelengths = self.sensorinfo['wl_smac'].T[0]
+        sensor_wavelengths = self.sensorinfo["wl_smac"].T[0]
 
         # Interpolate whole wavelength radiances to sensor wavlengths
-        rv_so = np.interp(sensor_wavelengths, self.spectral.wlS,
-                          rad.rso.T[0])
-        rv_do = np.interp(sensor_wavelengths, self.spectral.wlS,
-                          rad.rdo.T[0])
-        rv_dd = np.interp(sensor_wavelengths, self.spectral.wlS,
-                          rad.rdd.T[0])
-        rv_sd = np.interp(sensor_wavelengths, self.spectral.wlS,
-                          rad.rsd.T[0])
+        rv_so = np.interp(sensor_wavelengths, self.spectral.wlS, rad.rso.T[0])
+        rv_do = np.interp(sensor_wavelengths, self.spectral.wlS, rad.rdo.T[0])
+        rv_dd = np.interp(sensor_wavelengths, self.spectral.wlS, rad.rdd.T[0])
+        rv_sd = np.interp(sensor_wavelengths, self.spectral.wlS, rad.rsd.T[0])
 
         # Run the smac atmosphere model
-        if (self._tracker['atm'] or self._tracker['angles'] or
-            self._tracker['sensor']):
-            atmopt = SMAC(self._angles, self._atm, self.sensorinfo['SMAC_coef'])
+        if self._tracker["atm"] or self._tracker["angles"] or self._tracker["sensor"]:
+            atmopt = SMAC(self._angles, self._atm, self.sensorinfo["SMAC_coef"])
             self.atmopt = atmopt
-            self._tracker['atm'] = False
-            self._tracker['angles'] = False
-            self._tracker['sensor'] = False
+            self._tracker["atm"] = False
+            self._tracker["angles"] = False
+            self._tracker["sensor"] = False
 
         # Upscale TOC to TOA
         ta_ss = self.atmopt.Ta_ss
@@ -272,25 +277,30 @@ class SPART:
         T_g = self.atmopt.Tg
 
         rtoa0 = ra_so + ta_ss * rv_so * ta_oo
-        rtoa1 = (ta_sd * rv_do + ta_ss * rv_sd * ra_dd * rv_do) * ta_oo / \
-                (1 - rv_dd * ra_dd)
+        rtoa1 = (
+            (ta_sd * rv_do + ta_ss * rv_sd * ra_dd * rv_do)
+            * ta_oo
+            / (1 - rv_dd * ra_dd)
+        )
         rtoa2 = (ta_ss * rv_sd + ta_sd * rv_dd) * ta_do / (1 - rv_dd * ra_dd)
         self.R_TOC = (ta_ss * rv_so + ta_sd * rv_do) / (ta_ss + ta_sd)
         self.R_TOA = T_g * (rtoa0 + rtoa1 + rtoa2)
         self.L_TOA = self._La * self.R_TOA
 
-        bands = self.sensorinfo['band_id_smac']
+        bands = self.sensorinfo["band_id_smac"]
 
-        results_table = pd.DataFrame(zip(bands, self.L_TOA[0], self.R_TOA[0],
-                                         self.R_TOC[0]),
-                                     index=sensor_wavelengths,
-                                     columns=['Band', 'L_TOA', 'R_TOA', 'R_TOC'])
+        results_table = pd.DataFrame(
+            zip(bands, self.L_TOA[0], self.R_TOA[0], self.R_TOC[0]),
+            index=sensor_wavelengths,
+            columns=["Band", "L_TOA", "R_TOA", "R_TOC"],
+        )
 
         if debug:
             # wet soil reflectance
-            rsoil = np.interp(sensor_wavelengths, self.spectral.wlS,
-                              self.soilopt.refl[:,0])
-            results_table['rsoil'] = rsoil
+            rsoil = np.interp(
+                sensor_wavelengths, self.spectral.wlS, self.soilopt.refl[:, 0]
+            )
+            results_table["rsoil"] = rsoil
 
         return results_table
 
@@ -324,13 +334,15 @@ class SpectralBands:
     IwlT : range
         Index of thermal bands
     """
+
     def __init__(self):
         self.wlP = np.arange(400, 2401, 1)
         self.wlE = np.arange(400, 751, 1)
         self.WlF = np.arange(640, 851, 1)
         self.wlO = np.arange(400, 2401, 1)
-        self.wlT = np.concatenate([np.arange(2500, 15001, 100),
-                                   np.arange(16000, 50001, 1000)])
+        self.wlT = np.concatenate(
+            [np.arange(2500, 15001, 100), np.arange(16000, 50001, 1000)]
+        )
         self.wlS = np.concatenate([self.wlO, self.wlT])
         self.wlPAR = np.arange(400, 701, 1)
         self.nwlP = len(self.wlP)
@@ -367,8 +379,13 @@ def calculate_ET_radiance(Ea, DOY, tts):
     # 'DOY / 365' however this is assumed to be a mistake and is corrected
     # here.
     b = 2 * np.pi * DOY / 365
-    correction_factor = 1.00011 + 0.034221 * np.cos(b) + 0.00128 * np.sin(b) \
-        + 0.000719 * np.cos(2 * b) + 0.000077 * np.sin(2 * b)
+    correction_factor = (
+        1.00011
+        + 0.034221 * np.cos(b)
+        + 0.00128 * np.sin(b)
+        + 0.000719 * np.cos(2 * b)
+        + 0.000077 * np.sin(2 * b)
+    )
     La = Ea * correction_factor * np.cos(tts * np.pi / 180) / np.pi
 
     return La
@@ -394,21 +411,21 @@ def calculate_spectral_convolution(wl_hi, radiation_spectra, sensorinfo):
     np.array
         Convolution result
     """
-    wl_srf = sensorinfo['wl_srf_smac']
-    p_srf = sensorinfo['p_srf_smac']
+    wl_srf = sensorinfo["wl_srf_smac"]
+    p_srf = sensorinfo["p_srf_smac"]
 
     def get_closest_index(V, N):
         # Find the indices of the closest entries in N to the values of those
         # in V
-        V = np.reshape(V, (V.shape[0] * V.shape[1], 1), order='F')
+        V = np.reshape(V, (V.shape[0] * V.shape[1], 1), order="F")
         A = np.repeat(N, len(V), axis=1)
         closest_index = np.argmin(np.abs(A - V.T), 0)
         return closest_index
 
     indx = get_closest_index(wl_srf, wl_hi)
-    rad = np.reshape(radiation_spectra[indx], (wl_srf.shape[0],
-                                               wl_srf.shape[1]),
-                     order='F')
+    rad = np.reshape(
+        radiation_spectra[indx], (wl_srf.shape[0], wl_srf.shape[1]), order="F"
+    )
     # Sum and normalize as p_srf is not normalized.
     rad_conv = np.sum(rad * p_srf, axis=0) / np.sum(p_srf, axis=0)
 
@@ -417,9 +434,9 @@ def calculate_spectral_convolution(wl_hi, radiation_spectra, sensorinfo):
 
 def load_optical_parameters():
     """Load optical parameters from saved arrays"""
-    params_file = Path(__file__).parent / 'model_parameters/optical_params.pkl'
+    params_file = Path(__file__).parent / "model_parameters/optical_params.pkl"
 
-    with open(params_file, 'rb') as f:
+    with open(params_file, "rb") as f:
         params = pickle.load(f)
 
     return params
@@ -427,9 +444,9 @@ def load_optical_parameters():
 
 def load_ET_parameters():
     """Load extratrerrestrial parameters from saved arrays"""
-    params_file = Path(__file__).parent / 'model_parameters/ET_irradiance.pkl'
+    params_file = Path(__file__).parent / "model_parameters/ET_irradiance.pkl"
 
-    with open(params_file, 'rb') as f:
+    with open(params_file, "rb") as f:
         params = pickle.load(f)
 
     return params
@@ -437,18 +454,17 @@ def load_ET_parameters():
 
 def load_sensor_info(sensor):
     """Load RS sensor information from saved arrays"""
-    sensor_path = Path(__file__).parent / f'sensor_information/{sensor}.pkl'
-    with open(sensor_path, 'rb') as f:
+    sensor_path = Path(__file__).parent / f"sensor_information/{sensor}.pkl"
+    with open(sensor_path, "rb") as f:
         sensor_info = pickle.load(f)
     return sensor_info
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     leafbio = LeafBiology(40, 10, 0.02, 0.01, 0, 10, 1.5)
     soilpar = SoilParameters(0.5, 0, 100, 15)
     canopy = CanopyStructure(3, -0.35, -0.15, 0.05)
     angles = Angles(40, 0, 0)
     atm = AtmosphericProperties(0.3246, 0.3480, 1.4116, 1013.25)
-    spart = SPART(soilpar, leafbio, canopy, atm, angles, 'LANDSAT8-OLI',
-                  100)
+    spart = SPART(soilpar, leafbio, canopy, atm, angles, "LANDSAT8-OLI", 100)
     print(spart.run())
