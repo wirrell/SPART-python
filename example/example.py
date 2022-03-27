@@ -7,6 +7,7 @@ It shows to use cases:
     2) Run SPART with PROSPECT-PRO as leaf model
 """
 import SPART
+import matplotlib.pyplot as plt
 
 # CASE 1: PROSPECT-D
 

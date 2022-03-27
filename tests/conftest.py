@@ -8,9 +8,9 @@ import pandas as pd
 import pytest
 import SPART
 from distutils import dir_util
-from SPART.prospect_5d import LeafBiology
+from SPART.prospect_5d import LeafBiology, PROSPECT_5D
 from SPART.sailh import CanopyStructure, Angles
-from SPART.bsm import SoilParameters
+from SPART.bsm import SoilParameters, BSM
 from SPART.smac import AtmosphericProperties
 
 
@@ -43,6 +43,23 @@ def pytest_generate_tests(metafunc):
                 .iterrows()
             )
         metafunc.parametrize("sail_test_case", tests)
+
+
+@pytest.fixture
+def default_leaf_optics(default_leaf_biology, optical_params):
+    leaf_optics =  PROSPECT_5D(default_leaf_biology, optical_params)
+    spectral_info = SPART.SpectralBands()
+    return SPART.set_leaf_refl_trans_assumptions(leaf_optics,
+                                                 default_leaf_biology,
+                                                 spectral_info)
+
+
+@pytest.fixture
+def default_soil_optics(default_soil_parameters, optical_params):
+    soil_optics = BSM(default_soil_parameters, optical_params)
+    spectral_info = SPART.SpectralBands()
+    return SPART.set_soil_refl_trans_assumptions(soil_optics, spectral_info)
+
 
 
 @pytest.fixture

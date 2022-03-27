@@ -1,15 +1,15 @@
 name: SPART
 channels:
-  - conda-forge
   - defaults
 dependencies:
+  - progressbar2
   - conda-build
-  - scipy
-  - python=3.8
   - numpy
+  - fastparquet
   - pandas
+  - python=3.8
+  - scipy
   - pytest
   - pytest-benchmark
-  - progressbar2
-  - fastparquet
+  - matplotlib
 prefix: /home/george/miniconda3/envs/SPART

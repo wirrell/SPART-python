@@ -16,24 +16,9 @@ def sail_test_case(request):
     return request.param
 
 
-@pytest.fixture
-def default_leaf_optics(default_leaf_biology, optical_params):
-    leaf_optics =  PROSPECT_5D(default_leaf_biology, optical_params)
-    spectral_info = SPART.SpectralBands()
-    return SPART.set_leaf_refl_trans_assumptions(leaf_optics,
-                                                 default_leaf_biology,
-                                                 spectral_info)
-
-
-@pytest.fixture
-def default_soil_optics(default_soil_parameters, optical_params):
-    soil_optics = BSM(default_soil_parameters, optical_params)
-    spectral_info = SPART.SpectralBands()
-    return SPART.set_soil_refl_trans_assumptions(soil_optics, spectral_info)
-
-
-
-def test_SAILH(sail_test_case, optical_params, default_leaf_optics, default_soil_optics):
+def test_SAILH(
+    sail_test_case, optical_params, default_leaf_optics, default_soil_optics
+):
     num, test_case = sail_test_case
     canopy_structure = CanopyStructure(*test_case[:4].to_numpy())
     angles = Angles(*test_case[4:7].to_numpy())
