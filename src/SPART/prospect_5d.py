@@ -25,14 +25,14 @@ class LeafBiology:
     ----------
     Cab : float
         Chlorophyll concentration, micro g / cm ^ 2
-    Cca : float
-        Carotenoid concentration, micro g / cm ^ 2
-    Cw : float
-        Equivalent water thickness, cm
     Cdm : float
         Leaf mass per unit area, g / cm ^ 2
+    Cw : float
+        Equivalent water thickness, cm
     Cs : float
         Brown pigments (from run_spart paper, unitless)
+    Cca : float
+        Carotenoid concentration, micro g / cm ^ 2
     Cant : float
         Anthocyanin content, micro g / cm ^ 2
     N : float
@@ -46,14 +46,14 @@ class LeafBiology:
     ----------
     Cab : float
         Chlorophyll concentration, micro g / cm ^ 2
-    Cca : float
-        Carotenoid concentration, micro g / cm ^ 2
-    Cw : float
-        Equivalent water thickness, cm
     Cdm : float
         Leaf mass per unit area, g / cm ^ 2
+    Cw : float
+        Equivalent water thickness, cm
     Cs : float
-        Fraction senescent material (brown pigment from run_spart paper, unitless)
+        Brown pigments (from run_spart paper, unitless)
+    Cca : float
+        Carotenoid concentration, micro g / cm ^ 2
     Cant : float
         Anthocyanin content, micro g / cm ^ 2
     N : float
@@ -71,10 +71,10 @@ class LeafBiology:
     """
 
     Cab: float
-    Cca: float
-    Cw: float
     Cdm: float
+    Cw: float
     Cs: float
+    Cca: float
     Cant: float
     N: float
     PROT: float = 0.0

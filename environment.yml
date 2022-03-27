@@ -1,12 +1,15 @@
-name: spart
+name: SPART
 channels:
+  - conda-forge
   - defaults
 dependencies:
-  - numba
+  - conda-build
+  - scipy
+  - python=3.8
+  - numpy
+  - pandas
   - pytest
   - pytest-benchmark
-  - python=3.9
-  - conda-build
-  - pandas
-  - scipy
-prefix: /home/george/miniconda3/envs/spart
+  - progressbar2
+  - fastparquet
+prefix: /home/george/miniconda3/envs/SPART
