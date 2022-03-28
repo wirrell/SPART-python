@@ -1,15 +1,7 @@
 """
 small, ready-to-use sample script showing how to run SPART.
-
-It shows to use cases:
-
-    1) Run SPART with PROSPECT5-D as leaf model
-    2) Run SPART with PROSPECT-PRO as leaf model
 """
 import SPART
-import matplotlib.pyplot as plt
-
-# CASE 1: PROSPECT-D
 
 # Use default values from original SPART paper
 
@@ -37,17 +29,3 @@ spart_s2_prospect5d = SPART.SPART(soilpar,
                                   sensor='Sentinel2A-MSI',
                                   DOY=100)
 results_s2_prospect5d = spart_s2_prospect5d.run()  # Pandas DataFrame containing R_TOC, R_TOA, L_TOA
-print(results_s2_prospect5d)
-
-# CASE 2: PROSPECT-PRO, uses additional leaf parameters
-leafbio = SPART.LeafBiology(Cab=40, Cca=10, Cw=0.02, Cs=0, Cdm=0.0, Cant=10, N=1.5, PROT=0.0012, CBC=0.0035)
-
-spart_s2_prospectpro = SPART.SPART(soilpar,
-                                  leafbio,
-                                  canopy,
-                                  atm,
-                                  angles,
-                                  sensor='Sentinel2A-MSI',
-                                  DOY=100)
-results_s2_prospectpro = spart_s2_prospectpro.run()  # Pandas DataFrame containing R_TOC, R_TOA, L_TOA
-print(results_s2_prospectpro)
