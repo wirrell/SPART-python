@@ -1,6 +1,7 @@
 """
 Example for SAILH model
 """
+import SPART
 from SPART.prospect_5d import LeafBiology, PROSPECT_5D
 from SPART.sailh import SAILH, CanopyStructure, Angles
 from SPART.bsm import SoilParameters, BSM
