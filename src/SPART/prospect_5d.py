@@ -14,7 +14,7 @@ and other carbon-based constituents
 import numpy as np
 import scipy.integrate as integrate
 from dataclasses import dataclass
-
+from numba import jit
 
 @dataclass
 class LeafBiology:
@@ -113,7 +113,8 @@ class LeafOptics:
     tran: np.ndarray
     kChlrel: np.ndarray
 
-
+# mangling __PROSPECT_5D_ - runs as an internal function
+# see we can pull out all non-jittable functions and then just have one jit call to this larger-scoped function
 def PROSPECT_5D(leafbio, optical_params):
     """
     PROSPECT_5D model.
@@ -179,9 +180,15 @@ def PROSPECT_5D(leafbio, optical_params):
     ) / N
 
     # Non-conservative scattering (normal case)
-    j = np.where(Kall > 0)[0]
-    t1 = (1 - Kall) * np.exp(-Kall)
+    @jit(nopython=True)
+    def make_j_t1(Kall):
+        j = np.where(Kall > 0)[0]
+        t1 = (1 - Kall) * np.exp(-Kall)
+        return t1,j
 
+    t1,j = make_j_t1(Kall)
+
+    # expint can't be accelerated via numba because of scipy integrate
     def expint(x):
         # NOTE: differences in final output come from this integral
         # which evaluates slightly different (10 decimal places) than matlab
@@ -192,10 +199,22 @@ def PROSPECT_5D(leafbio, optical_params):
         return integrate.quad(intergrand, x, np.inf)
 
     t2 = Kall ** 2 * np.vectorize(expint)(Kall)[0]
-    tau = np.ones((len(t1), 1))
-    tau[j] = t1[j] + t2[j]
-    kChlrel = np.zeros((len(t1), 1))
-    kChlrel[j] = Cab * Kab[j] / (Kall[j] * N)
+
+    @jit(nopython=True)
+    def make_tau(t1,t2,j):
+        tau = np.ones((len(t1), 1))
+        tau[j] = t1[j] + t2[j]
+        return tau
+    
+    tau = make_tau(t1,t2,j)
+
+    @jit(nopython=True)
+    def make_KChlrel(t1,Cab,Kab,j,N):
+        kChlrel = np.zeros((len(t1), 1))
+        kChlrel[j] = Cab * Kab[j] / (Kall[j] * N)
+        return kChlrel
+
+    kChlrel = make_KChlrel(t1,Cab,Kab,j,N)
 
     t_alph = calculate_tav(40, nr)
     r_alph = 1 - t_alph
@@ -245,7 +264,6 @@ def PROSPECT_5D(leafbio, optical_params):
 
     return leafopt
 
-
 def calculate_tav(alpha, nr):
     """
     Calculate average transmissitivity of a dieletrie plane surface.
@@ -272,6 +290,7 @@ def calculate_tav(alpha, nr):
         Transmission of isotropic radiation across an interface
         between two dielectrics - Stern
     """
+
     rd = np.pi / 180
     n2 = nr ** 2
     n_p = n2 + 1
