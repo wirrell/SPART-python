@@ -8,6 +8,7 @@ SAILH model outlined in:
         - W Verhoef 1998
 """
 import numpy as np
+import numba
 import scipy.integrate as integrate
 
 
@@ -42,27 +43,36 @@ def SAILH(soil, leafopt, canopy, angles):
             " output directly into the SAILH model with adding"
             "\n the neccessary thermal wavelengths."
         )
-
-    deg2rad = np.pi / 180
-
     nl = canopy.nlayers
-    litab = np.array([*range(5, 80, 10), *range(81, 91, 2)])[:, np.newaxis]
     LAI = canopy.LAI
     lidf = canopy.lidf
-    xl = np.arange(0, -1 - (1 / nl), -1 / nl)[:, np.newaxis]
-    dx = 1 / nl
-    iLAI = LAI * dx
 
     rho = leafopt.refl
     tau = leafopt.tran
     rs = soil.refl
     tts = angles.sol_angle
     tto = angles.obs_angle
+    rel_angle = angles.rel_angle
+    q = canopy.q
+    rso, rdo, rsd, rdd = _SAILH_compuatation(
+        nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q
+    )
+
+    rad = CanopyReflectances(rso, rdo, rsd, rdd)
+
+    return rad
+
+
+@numba.jit
+def _SAILH_compuatation(nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q):
+
+    dx = 1 / nl
+    iLAI = LAI * dx
+    deg2rad = np.pi / 180
 
     # Set geometric quantities
-
     # ensures symmetry at 90 and 270 deg
-    psi = abs(angles.rel_angle - 360 * round(angles.rel_angle / 360))
+    psi = abs(rel_angle - 360 * round(rel_angle / 360))
     psi_rad = psi * deg2rad
     sin_tts = np.sin(tts * deg2rad)
     cos_tts = np.cos(tts * deg2rad)
@@ -72,8 +82,8 @@ def SAILH(soil, leafopt, canopy, angles):
     cos_tto = np.cos(tto * deg2rad)
     tan_tto = np.tan(tto * deg2rad)
 
-    sin_ttli = np.sin(litab * deg2rad)
-    cos_ttli = np.cos(litab * deg2rad)
+    sin_ttli = np.sin(LITAB * deg2rad)
+    cos_ttli = np.cos(LITAB * deg2rad)
 
     dso = np.sqrt(tan_tts ** 2 + tan_tto ** 2 - 2 * tan_tts * tan_tto * np.cos(psi_rad))
 
@@ -105,32 +115,18 @@ def SAILH(soil, leafopt, canopy, angles):
     dof = 0.5 * (K - bf)  # diffuse to directional forward scattering
 
     # Probabilites
-    Ps = np.exp(k * xl * LAI)  # of viewing a leaf in solar direction
-    Po = np.exp(K * xl * LAI)  # of viewing a leaf in observation direction
+    Ps = np.exp(k * XL * LAI)  # of viewing a leaf in solar direction
+    Po = np.exp(K * XL * LAI)  # of viewing a leaf in observation direction
 
     if LAI > 0:
         Ps[0:nl] = Ps[0:nl] * (1 - np.exp(-k * LAI * dx)) / (k * LAI * dx)
         Po[0:nl] = Po[0:nl] * (1 - np.exp(-k * LAI * dx)) / (k * LAI * dx)
 
-    q = canopy.q
     Pso = np.zeros(Po.shape)
 
-    def Psofunction(x, K, k, LAI, q, dso):
-        # From APPENDIX IV of original matlab code
-        if dso != 0:
-            alpha = (dso / q) * 2 / (k + K)
-            pso = np.exp(
-                (K + k) * LAI * x
-                + np.sqrt(K * k) * LAI / alpha * (1 - np.exp(x * alpha))
-            )
-        else:
-            pso = np.exp((K + k) * LAI * x - np.sqrt(K * k) * LAI * x)
-
-        return pso
-
-    for j in range(len(xl)):
+    for j in range(len(XL)):
         Pso[j, :] = (
-            integrate.quad(Psofunction, xl[j] - dx, xl[j], args=(K, k, LAI, q, dso))[0]
+            integrate.quad(Psofunction, XL[j] - dx, XL[j], args=(K, k, LAI, q, dso))[0]
             / dx
         )
 
@@ -232,9 +228,7 @@ def SAILH(soil, leafopt, canopy, angles):
     rsd = rho_sd + (tau_ss + tau_sd) * rs * tau_dd / denom
     rdd = rho_dd + tau_dd * rs * tau_dd / denom
 
-    rad = CanopyReflectances(rso, rdo, rsd, rdd)
-
-    return rad
+    return rso, rdo, rsd, rdd
 
 
 class CanopyReflectances:
@@ -348,6 +342,7 @@ class CanopyStructure:
         self.lidf = calculate_leafangles(LIDFa, LIDFb)
 
 
+@numba.njit
 def calculate_leafangles(LIDFa, LIDFb):
     """Calculate the Leaf Inclination Distribution Function as outlined
     by Verhoef in paper cited at the top of this script.
@@ -364,25 +359,6 @@ def calculate_leafangles(LIDFa, LIDFb):
     np.array
         Leaf inclination distribution function, calculated from LIDF
     """
-
-    def dcum(a, b, theta):
-        # Calculate cumulative distribution
-        rd = np.pi / 180
-        if LIDFa > 1:
-            f = 1 - np.cos(theta * rd)
-        else:
-            eps = 1e-8
-            delx = 1
-            x = 2 * rd * theta
-            theta2 = x
-            while delx > eps:
-                y = a * np.sin(x) + 0.5 * b * np.sin(2 * x)
-                dx = 0.5 * (y - x + theta2)
-                x = x + dx
-                delx = abs(dx)
-            f = (2 * y + theta2) / np.pi
-        return f
-
     # F sized to 14 entries so diff for actual LIDF becomes 13 entries
     F = np.zeros((14, 1))
     for i in range(1, 9):
@@ -393,11 +369,46 @@ def calculate_leafangles(LIDFa, LIDFb):
         F[i] = dcum(LIDFa, LIDFb, theta)
     F[13] = 1
 
-    lidf = np.diff(F, axis=0)
+    lidf = F[1:] - F[:-1]
 
     return lidf
 
 
+@numba.njit
+def dcum(a, b, theta):
+    # Calculate cumulative distribution of leaves
+    rd = np.pi / 180
+    if a > 1:
+        f = 1 - np.cos(theta * rd)
+    else:
+        eps = 1e-8
+        delx = 1
+        x = 2 * rd * theta
+        theta2 = x
+        while delx > eps:
+            y = a * np.sin(x) + 0.5 * b * np.sin(2 * x)
+            dx = 0.5 * (y - x + theta2)
+            x = x + dx
+            delx = abs(dx)
+        f = (2 * y + theta2) / np.pi
+    return f
+
+
+@numba.njit
+def Psofunction(x, K, k, LAI, q, dso):
+    # From APPENDIX IV of original matlab code
+    if dso != 0:
+        alpha = (dso / q) * 2 / (k + K)
+        pso = np.exp(
+            (K + k) * LAI * x + np.sqrt(K * k) * LAI / alpha * (1 - np.exp(x * alpha))
+        )
+    else:
+        pso = np.exp((K + k) * LAI * x - np.sqrt(K * k) * LAI * x)
+
+    return pso
+
+
+@numba.njit
 def _volscatt(sin_tts, cos_tts, sin_tto, cos_tto, psi_rad, sin_ttli, cos_ttli):
     # Calculate geometric factors. See SAILH.m code.
     # See original matlab code. Adapted here to save recalculating trigs.
@@ -444,3 +455,73 @@ def _volscatt(sin_tts, cos_tts, sin_tto, cos_tto, psi_rad, sin_ttli, cos_ttli):
     ftau = np.maximum(zeros, ftau)
 
     return chi_s, chi_o, frho, ftau
+
+
+LITAB = np.array(
+    [[5], [15], [25], [35], [45], [55], [65], [75], [81], [83], [85], [87], [89]]
+)
+XL = np.array(
+    [
+        [0.0],
+        [-0.01666667],
+        [-0.03333333],
+        [-0.05],
+        [-0.06666667],
+        [-0.08333333],
+        [-0.1],
+        [-0.11666667],
+        [-0.13333333],
+        [-0.15],
+        [-0.16666667],
+        [-0.18333333],
+        [-0.2],
+        [-0.21666667],
+        [-0.23333333],
+        [-0.25],
+        [-0.26666667],
+        [-0.28333333],
+        [-0.3],
+        [-0.31666667],
+        [-0.33333333],
+        [-0.35],
+        [-0.36666667],
+        [-0.38333333],
+        [-0.4],
+        [-0.41666667],
+        [-0.43333333],
+        [-0.45],
+        [-0.46666667],
+        [-0.48333333],
+        [-0.5],
+        [-0.51666667],
+        [-0.53333333],
+        [-0.55],
+        [-0.56666667],
+        [-0.58333333],
+        [-0.6],
+        [-0.61666667],
+        [-0.63333333],
+        [-0.65],
+        [-0.66666667],
+        [-0.68333333],
+        [-0.7],
+        [-0.71666667],
+        [-0.73333333],
+        [-0.75],
+        [-0.76666667],
+        [-0.78333333],
+        [-0.8],
+        [-0.81666667],
+        [-0.83333333],
+        [-0.85],
+        [-0.86666667],
+        [-0.88333333],
+        [-0.9],
+        [-0.91666667],
+        [-0.93333333],
+        [-0.95],
+        [-0.96666667],
+        [-0.98333333],
+        [-1.0],
+    ]
+)
