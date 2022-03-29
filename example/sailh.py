@@ -2,6 +2,7 @@
 Example for SAILH model
 """
 import SPART
+import nvtx
 from SPART.prospect_5d import LeafBiology, PROSPECT_5D
 from SPART.sailh import SAILH, CanopyStructure, Angles
 from SPART.bsm import SoilParameters, BSM
@@ -26,6 +27,9 @@ angles = Angles(40, 0, 0)
 canopy_structure = CanopyStructure(3, -0.35, -0.15, 0.05)
 
 # TEST BEGINS
-result = SAILH(soil_optics, leaf_optics, canopy_structure, angles)
+@nvtx.annotate('SAILH test', color='green')
+def test(soil_optics, leaf_optics, canopy_structure, angles):
+    result = SAILH(soil_optics, leaf_optics, canopy_structure, angles)
 
+test(soil_optics, leaf_optics, canopy_structure, angles)
 # TEST ENDS
