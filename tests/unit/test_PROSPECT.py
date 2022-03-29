@@ -22,6 +22,7 @@ def test_PROSPECT_5D(prospect_test_case, optical_params):
     exp_kchl = test_case[4009:6010].to_numpy()
     result = PROSPECT_5D(leaf_biology, optical_params)
 
-    assert np.testing.assert_almost_equal(exp_refl, result.refl.flatten())
-    assert np.testing.assert_almost_equal(exp_tran, result.tran.flatten())
-    assert np.testing.assert_almost_equal(exp_kchl, result.kChlrel.flatten())
+    np.testing.assert_almost_equal(exp_refl, result.refl.flatten())
+    np.testing.assert_almost_equal(exp_tran, result.tran.flatten())
+    np.testing.assert_almost_equal(exp_kchl, result.kChlrel.flatten())
+    assert True
