@@ -10,6 +10,7 @@ SAILH model outlined in:
 import numpy as np
 import numba
 import scipy.integrate as integrate
+from numba import cuda
 
 
 def SAILH(soil, leafopt, canopy, angles):
@@ -54,7 +55,7 @@ def SAILH(soil, leafopt, canopy, angles):
     tto = angles.obs_angle
     rel_angle = angles.rel_angle
     q = canopy.q
-    rso, rdo, rsd, rdd = _SAILH_compuatation(
+    rso, rdo, rsd, rdd = _SAILH_computation(
         nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q
     )
 
@@ -64,8 +65,7 @@ def SAILH(soil, leafopt, canopy, angles):
 
 
 @numba.jit
-def _SAILH_compuatation(nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q):
-
+def _SAILH_computation(nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q):
     dx = 1 / nl
     iLAI = LAI * dx
     deg2rad = np.pi / 180
