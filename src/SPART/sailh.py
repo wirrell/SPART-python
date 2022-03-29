@@ -122,8 +122,6 @@ def _SAILH_compuatation(nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q):
         Ps[0:nl] = Ps[0:nl] * (1 - np.exp(-k * LAI * dx)) / (k * LAI * dx)
         Po[0:nl] = Po[0:nl] * (1 - np.exp(-k * LAI * dx)) / (k * LAI * dx)
 
-    Pso = np.zeros(Po.shape)
-
     for j in range(len(XL)):
         Pso[j, :] = (
             integrate.quad(Psofunction, XL[j] - dx, XL[j], args=(K, k, LAI, q, dso))[0]
@@ -146,31 +144,6 @@ def _SAILH_compuatation(nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q):
     m = np.sqrt(a ** 2 - sigb ** 2)
     rinf = (a - m) / sigb
     rinf2 = rinf * rinf
-
-    def calcJ1(x, m, k, LAI):
-        # For getting numerically stable solutions
-        J1 = np.zeros((len(m), 1))
-        sing = np.abs((m - k) * LAI) < 1e-6
-
-        CS = np.where(sing)
-        CN = np.where(~sing)
-
-        J1[CN] = (np.exp(m[CN] * LAI * x) - np.exp(k * LAI * x)) / (k - m[CN])
-        J1[CS] = (
-            -0.5
-            * (np.exp(m[CS] * LAI * x) + np.exp(k * LAI * x))
-            * LAI
-            * x
-            * (1 - 1 / 12 * (k - m[CS]) ** 2 * LAI ** 2)
-        )
-        return J1
-
-    def calcJ2(x, m, k, LAI):
-        # For getting numerically stable solutions
-        J2 = (np.exp(k * LAI * x) - np.exp(-k * LAI) * np.exp(-m * LAI * (1 + x))) / (
-            k + m
-        )
-        return J2
 
     # direct solar radiation
     J1k = calcJ1(-1, m, k, LAI)
@@ -229,6 +202,36 @@ def _SAILH_compuatation(nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q):
     rdd = rho_dd + tau_dd * rs * tau_dd / denom
 
     return rso, rdo, rsd, rdd
+
+
+@numba.njit
+def calcJ2(x, m, k, LAI):
+    # For getting numerically stable solutions
+    J2 = (np.exp(k * LAI * x) - np.exp(-k * LAI) * np.exp(-m * LAI * (1 + x))) / (
+        k + m
+    )
+    return J2
+
+
+@numba.njit
+def calcJ1(x, m, k, LAI):
+    # For getting numerically stable solutions
+    J1 = np.zeros((len(m), 1))
+    sing = np.abs((m - k) * LAI) < 1e-6
+
+    CS = np.where(sing)[0]
+    CN = np.where(~sing)[0]
+
+    J1[CN, 0] = (np.exp(m[CN, 0] * LAI * x) - np.exp(k * LAI * x)) / (k - m[CN, 0])
+    J1[CS, 0] = (
+        -0.5
+        * (np.exp(m[CS, 0] * LAI * x) + np.exp(k * LAI * x))
+        * LAI
+        * x
+        * (1 - 1 / 12 * (k - m[CS, 0]) ** 2 * LAI ** 2)
+    )
+    return J1
+
 
 
 class CanopyReflectances:
@@ -457,6 +460,7 @@ def _volscatt(sin_tts, cos_tts, sin_tto, cos_tto, psi_rad, sin_ttli, cos_ttli):
     return chi_s, chi_o, frho, ftau
 
 
+# Pre-defined arrays for computation
 LITAB = np.array(
     [[5], [15], [25], [35], [45], [55], [65], [75], [81], [83], [85], [87], [89]]
 )
@@ -523,5 +527,70 @@ XL = np.array(
         [-0.96666667],
         [-0.98333333],
         [-1.0],
+    ]
+)
+Pso = np.array(
+    [
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
+        [0.],
     ]
 )
