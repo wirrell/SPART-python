@@ -11,7 +11,7 @@ optical_params = SPART.load_optical_parameters()
 
 # Compute default soil optics
 soil_params = SoilParameters(0.5, 0, 100, 20)
-soil_optics = BSM(default_soil_parameters, optical_params)
+soil_optics = BSM(soil_params, optical_params)
 
 # Compute default leaf reflectance
 leaf_biology = LeafBiology(40, 0.01, 0.02, 0, 10, 10, 1.5)
