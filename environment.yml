@@ -1,15 +1,20 @@
-name: SPART
+name: /red/nvidia-ai/radiative/conda_env
 channels:
+  - conda-forge
+  - bioconda
   - defaults
+  - https://repo.anaconda.com/pkgs/main
+  - https://repo.anaconda.com/pkgs/free
 dependencies:
-  - progressbar2
-  - conda-build
-  - numpy
-  - fastparquet
-  - pandas
-  - python=3.8
   - scipy
+  - numpy
+  - progressbar2
+  - pandas
+  - fastparquet
   - pytest
-  - pytest-benchmark
   - matplotlib
-prefix: /home/george/miniconda3/envs/SPART
+  - conda-build
+  - python=3.8
+  - pytest-benchmark
+  - nvtx
+prefix: /red/nvidia-ai/radiative/conda_env

@@ -20,6 +20,7 @@ Department of Water Resources
 import pickle
 import numpy as np
 import pandas as pd
+import nvtx
 from pathlib import Path
 from SPART.bsm import BSM, SoilParameters, SoilParametersFromFile
 from SPART.prospect_5d import PROSPECT_5D, LeafBiology
@@ -187,37 +188,44 @@ class SPART:
 
         # Run the bsm model
         if self._tracker["soil"]:
-            soilopt = BSM(self._soilpar, self.optipar)
+            with nvtx.annotate('BSM model run', color='red'):
+                soilopt = BSM(self._soilpar, self.optipar)
             # Update soil optics refl and trans to include thermal
             # values from model assumptions
-            self.soilopt = set_soil_refl_trans_assumptions(soilopt, self.spectral)
+            with nvtx.annotate('Assign soil assumptions', color='purple'):
+                self.soilopt = set_soil_refl_trans_assumptions(soilopt, self.spectral)
             self._tracker["soil"] = False
 
         # Run the PROSPECT model
         if self._tracker["leaf"]:
-            leafopt = PROSPECT_5D(self._leafbio, self.optipar)
+            with nvtx.annotate('PROSPECT 5D model run', color='yellow'):
+                leafopt = PROSPECT_5D(self._leafbio, self.optipar)
             # Update leaf optics refl and trans to include thermal
             # values from model assumptions
-            self.leafopt = set_leaf_refl_trans_assumptions(
-                leafopt, self.leafbio, self.spectral
-            )
+            with nvtx.annotate('Assign leaf assumptions', color='purple'):
+                self.leafopt = set_leaf_refl_trans_assumptions(
+                    leafopt, self.leafbio, self.spectral
+                )
             self._tracker["leaf"] = False
 
         # Run the SAIL model
-        rad = SAILH(self.soilopt, self.leafopt, self._canopy, self._angles)
+        with nvtx.annotate('SAILH model run', color='green'):
+            rad = SAILH(self.soilopt, self.leafopt, self._canopy, self._angles)
         self.canopyopt = rad
 
         sensor_wavelengths = self.sensorinfo["wl_smac"].T[0]
 
         # Interpolate whole wavelength radiances to sensor wavlengths
-        rv_so = np.interp(sensor_wavelengths, self.spectral.wlS, rad.rso.T[0])
-        rv_do = np.interp(sensor_wavelengths, self.spectral.wlS, rad.rdo.T[0])
-        rv_dd = np.interp(sensor_wavelengths, self.spectral.wlS, rad.rdd.T[0])
-        rv_sd = np.interp(sensor_wavelengths, self.spectral.wlS, rad.rsd.T[0])
+        with nvtx.annotate('Interpolating SAILH outputs to sensor wavelengths', color='purple'):
+            rv_so = np.interp(sensor_wavelengths, self.spectral.wlS, rad.rso.T[0])
+            rv_do = np.interp(sensor_wavelengths, self.spectral.wlS, rad.rdo.T[0])
+            rv_dd = np.interp(sensor_wavelengths, self.spectral.wlS, rad.rdd.T[0])
+            rv_sd = np.interp(sensor_wavelengths, self.spectral.wlS, rad.rsd.T[0])
 
         # Run the smac atmosphere model
         if self._tracker["atm"] or self._tracker["angles"] or self._tracker["sensor"]:
-            atmopt = SMAC(self._angles, self._atm, self.sensorinfo["SMAC_coef"])
+            with nvtx.annotate('SMAC model run', color='blue'):
+                atmopt = SMAC(self._angles, self._atm, self.sensorinfo["SMAC_coef"])
             self.atmopt = atmopt
             self._tracker["atm"] = False
             self._tracker["angles"] = False
