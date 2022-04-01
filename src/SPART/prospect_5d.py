@@ -12,9 +12,10 @@ Féret et al. (2021) - PROSPECT-PRO for estimating content of nitrogen-containin
 and other carbon-based constituents 
 """
 import numpy as np
+import numba
 import scipy.integrate as integrate
 from dataclasses import dataclass
-from numba import jit
+
 
 @dataclass
 class LeafBiology:
@@ -113,6 +114,7 @@ class LeafOptics:
     tran: np.ndarray
     kChlrel: np.ndarray
 
+
 # mangling __PROSPECT_5D_ - runs as an internal function
 # see we can pull out all non-jittable functions and then just have one jit call to this larger-scoped function
 def PROSPECT_5D(leafbio, optical_params):
@@ -164,61 +166,57 @@ def PROSPECT_5D(leafbio, optical_params):
     Ks = optical_params["Ks"]
     Kant = optical_params["Kant"]
     # add PROSPECT-PRO optical parameters (Féret et al., 2021)
-    kcbc = optical_params["cbc"]
-    kprot = optical_params["prot"]
+    Kcbc = optical_params["cbc"]
+    Kprot = optical_params["prot"]
 
-    # Compact leaf layer
-    Kall = (
-        Cab * Kab
-        + Cca * Kca
-        + Cdm * Kdm
-        + Cw * Kw
-        + Cs * Ks
-        + Cant * Kant
-        + CBC * kcbc
-        + PROT * kprot
-    ) / N
+    Kall = make_Kall(
+        Cab,
+        Cca,
+        Cdm,
+        Cw,
+        Cs,
+        Cant,
+        CBC,
+        PROT,
+        Kab,
+        Kca,
+        Kdm,
+        Kw,
+        Ks,
+        Kant,
+        Kcbc,
+        Kprot,
+        N
+    )
 
-    # Non-conservative scattering (normal case)
-    @jit(nopython=True)
-    def make_j_t1(Kall):
-        j = np.where(Kall > 0)[0]
-        t1 = (1 - Kall) * np.exp(-Kall)
-        return t1,j
-
-    t1,j = make_j_t1(Kall)
-
-    # expint can't be accelerated via numba because of scipy integrate
-    def expint(x):
-        # NOTE: differences in final output come from this integral
-        # which evaluates slightly different (10 decimal places) than matlab
-        # Exponential integral from expint command in matlab
-        def intergrand(t):
-            return np.exp(-t) / t
-
-        return integrate.quad(intergrand, x, np.inf)
+    t1, j = make_j_t1(Kall)
 
     t2 = Kall ** 2 * np.vectorize(expint)(Kall)[0]
 
-    @jit(nopython=True)
-    def make_tau(t1,t2,j):
-        tau = np.ones((len(t1), 1))
-        tau[j] = t1[j] + t2[j]
-        return tau
-    
-    tau = make_tau(t1,t2,j)
+    tau = make_tau(t1, t2, j)
 
-    @jit(nopython=True)
-    def make_KChlrel(t1,Cab,Kab,j,N):
-        kChlrel = np.zeros((len(t1), 1))
-        kChlrel[j] = Cab * Kab[j] / (Kall[j] * N)
-        return kChlrel
-
-    kChlrel = make_KChlrel(t1,Cab,Kab,j,N)
+    kChlrel = make_KChlrel(t1, Cab, Kab, j, N, Kall)
 
     t_alph = calculate_tav(40, nr)
-    r_alph = 1 - t_alph
+
     t12 = calculate_tav(90, nr)
+
+
+    # Call PROSPECT computation
+    refl, tran, kChlrel = _PROSPECT_5D(
+        t1, j, t2, tau, Kall, kChlrel, t_alph, t12, nr, N
+    )
+
+    # We flatten the arrays here so they go from (2001, 1), to (2001,)
+    leafopt = LeafOptics(refl, tran, kChlrel)
+
+    return leafopt
+
+
+@numba.njit
+def _PROSPECT_5D(t1, j, t2, tau, Kall, kChlrel, t_alph, t12, nr, N):
+
+    r_alph = 1 - t_alph
     r12 = 1 - t12
     t21 = t12 / (nr ** 2)
     r21 = 1 - t21
@@ -259,11 +257,61 @@ def PROSPECT_5D(leafbio, optical_params):
     tran = Ta * Tsub / denom
     refl = Ra + Ta * Rsub * t / denom
 
-    # We flatten the arrays here so they go from (2001, 1), to (2001,)
-    leafopt = LeafOptics(refl, tran, kChlrel)
+    return refl, tran, kChlrel
 
-    return leafopt
 
+# expint can't be accelerated via numba because of scipy integrate
+def expint(x):
+    # NOTE: differences in final output come from this integral
+    # which evaluates slightly different (10 decimal places) than matlab
+    # Exponential integral from expint command in matlab
+    def intergrand(t):
+        return np.exp(-t) / t
+
+    return integrate.quad(intergrand, x, np.inf)
+
+
+@numba.njit
+def make_Kall(
+    Cab, Cca, Cdm, Cw, Cs, Cant, CBC, PROT, Kab, Kca, Kdm, Kw, Ks, Kant, Kcbc, Kprot, N
+):
+    # Compact leaf layer
+    Kall = (
+        Cab * Kab
+        + Cca * Kca
+        + Cdm * Kdm
+        + Cw * Kw
+        + Cs * Ks
+        + Cant * Kant
+        + CBC * Kcbc
+        + PROT * Kprot
+    ) / N
+    return Kall
+
+
+# Non-conservative scattering (normal case)
+@numba.njit
+def make_j_t1(Kall):
+    j = np.where(Kall > 0)[0]
+    t1 = (1 - Kall) * np.exp(-Kall)
+    return t1, j
+
+
+@numba.njit
+def make_tau(t1, t2, j):
+    tau = np.ones((len(t1), 1))
+    tau[j] = t1[j] + t2[j]
+    return tau
+
+
+@numba.njit
+def make_KChlrel(t1, Cab, Kab, j, N, Kall):
+    kChlrel = np.zeros((len(t1), 1))
+    kChlrel[j] = Cab * Kab[j] / (Kall[j] * N)
+    return kChlrel
+
+
+@numba.njit
 def calculate_tav(alpha, nr):
     """
     Calculate average transmissitivity of a dieletrie plane surface.
@@ -297,11 +345,12 @@ def calculate_tav(alpha, nr):
     nm = n2 - 1
     a = (nr + 1) * (nr + 1) / 2
     k = -(n2 - 1) * (n2 - 1) / 4
-    sa = np.sin(alpha * rd)
+    sa = np.full((2001, 1), np.sin(alpha * rd))
 
-    b1 = 0
+    b1 = np.zeros((2001, 1))
     if alpha != 90:
         b1 = np.sqrt((sa ** 2 - n_p / 2) * (sa ** 2 - n_p / 2) + k)
+
     b2 = sa ** 2 - n_p / 2
     b = b1 - b2
     b3 = b ** 3
