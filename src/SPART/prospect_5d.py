@@ -216,48 +216,49 @@ def PROSPECT_5D(leafbio, optical_params):
 @numba.njit
 def _PROSPECT_5D(t1, j, t2, tau, Kall, kChlrel, t_alph, t12, nr, N):
 
-    r_alph = 1 - t_alph
-    r12 = 1 - t12
-    t21 = t12 / (nr ** 2)
-    r21 = 1 - t21
+    with nvtx.annotate('PROSPECT 5D model run', color='yellow'):
+        r_alph = 1 - t_alph
+        r12 = 1 - t12
+        t21 = t12 / (nr ** 2)
+        r21 = 1 - t21
 
-    # top surface side
-    denom = 1 - r21 * r21 * tau ** 2
-    Ta = t_alph * tau * t21 / denom
-    Ra = r_alph + r21 * tau * Ta
+        # top surface side
+        denom = 1 - r21 * r21 * tau ** 2
+        Ta = t_alph * tau * t21 / denom
+        Ra = r_alph + r21 * tau * Ta
 
-    # bottom surface side
-    t = t12 * tau * t21 / denom
-    r = r12 + r21 * tau * t
+        # bottom surface side
+        t = t12 * tau * t21 / denom
+        r = r12 + r21 * tau * t
 
-    # Stokes equations to compute properties of next N-1 layers (N real)
+        # Stokes equations to compute properties of next N-1 layers (N real)
 
-    # Normal case
-    D = np.sqrt((1 + r + t) * (1 + r - t) * (1 - r + t) * (1 - r - t))
-    rq = r ** 2
-    tq = t ** 2
-    a = (1 + rq - tq + D) / (2 * r)
-    b = (1 - rq + tq + D) / (2 * t)
+        # Normal case
+        D = np.sqrt((1 + r + t) * (1 + r - t) * (1 - r + t) * (1 - r - t))
+        rq = r ** 2
+        tq = t ** 2
+        a = (1 + rq - tq + D) / (2 * r)
+        b = (1 - rq + tq + D) / (2 * t)
 
-    bNm1 = b ** (N - 1)
-    bN2 = bNm1 ** 2
-    a2 = a ** 2
-    denom = a2 * bN2 - 1
-    Rsub = a * (bN2 - 1) / denom
-    Tsub = bNm1 * (a2 - 1) / denom
+        bNm1 = b ** (N - 1)
+        bN2 = bNm1 ** 2
+        a2 = a ** 2
+        denom = a2 * bN2 - 1
+        Rsub = a * (bN2 - 1) / denom
+        Tsub = bNm1 * (a2 - 1) / denom
 
-    # Case of zero absorption
-    j = np.where(r + t >= 1)[0]
-    Tsub[j] = t[j] / (t[j] + (1 - t[j]) * (N - 1))
-    Rsub[j] = 1 - Tsub[j]
+        # Case of zero absorption
+        j = np.where(r + t >= 1)[0]
+        Tsub[j] = t[j] / (t[j] + (1 - t[j]) * (N - 1))
+        Rsub[j] = 1 - Tsub[j]
 
-    # Reflectance and transmittance of the leaf:
-    #   combine top llayer with next N-1 layers
-    denom = 1 - Rsub * r
-    tran = Ta * Tsub / denom
-    refl = Ra + Ta * Rsub * t / denom
+        # Reflectance and transmittance of the leaf:
+        #   combine top llayer with next N-1 layers
+        denom = 1 - Rsub * r
+        tran = Ta * Tsub / denom
+        refl = Ra + Ta * Rsub * t / denom
 
-    return refl, tran, kChlrel
+        return refl, tran, kChlrel
 
 
 # expint can't be accelerated via numba because of scipy integrate

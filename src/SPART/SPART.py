@@ -198,8 +198,7 @@ class SPART:
 
         # Run the PROSPECT model
         if self._tracker["leaf"]:
-            with nvtx.annotate('PROSPECT 5D model run', color='yellow'):
-                leafopt = PROSPECT_5D(self._leafbio, self.optipar)
+            leafopt = PROSPECT_5D(self._leafbio, self.optipar)
             # Update leaf optics refl and trans to include thermal
             # values from model assumptions
             with nvtx.annotate('Assign leaf assumptions', color='purple'):
@@ -209,8 +208,7 @@ class SPART:
             self._tracker["leaf"] = False
 
         # Run the SAIL model
-        with nvtx.annotate('SAILH model run', color='green'):
-            rad = SAILH(self.soilopt, self.leafopt, self._canopy, self._angles)
+        rad = SAILH(self.soilopt, self.leafopt, self._canopy, self._angles)
         self.canopyopt = rad
 
         sensor_wavelengths = self.sensorinfo["wl_smac"].T[0]
