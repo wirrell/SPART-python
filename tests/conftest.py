@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 import SPART
 from distutils import dir_util
-from SPART.prospect_5d import LeafBiology, PROSPECT_5D
+from SPART.prospect_5d import LeafBiology, PROSPECT_5D, LeafOptics
 from SPART.sailh import CanopyStructure, Angles
 from SPART.bsm import SoilParameters, BSM
 from SPART.smac import AtmosphericProperties
@@ -83,14 +83,31 @@ def default_SPARTSimulation(
     )
 
 
-
 @pytest.fixture
 def default_leaf_optics(default_leaf_biology, optical_params):
-    leaf_optics =  PROSPECT_5D(default_leaf_biology, optical_params)
+    refl, tran, kChlrel =  PROSPECT_5D(
+        default_leaf_biology.Cab,
+        default_leaf_biology.Cdm,
+        default_leaf_biology.Cw,
+        default_leaf_biology.Cs,
+        default_leaf_biology.Cca,
+        default_leaf_biology.Cant,
+        default_leaf_biology.N,
+        optical_params["nr"],
+        optical_params["Kdm"],
+        optical_params["Kab"],
+        optical_params["Kca"],
+        optical_params["Kw"],
+        optical_params["Ks"],
+        optical_params["Kant"],
+        optical_params["cbc"],
+        optical_params["prot"]
+        )
     spectral_info = SPART.SpectralBands()
-    return SPART.set_leaf_refl_trans_assumptions(leaf_optics,
+    refl, tran =  SPART.set_leaf_refl_trans_assumptions(refl, tran,
                                                  default_leaf_biology,
                                                  spectral_info)
+    return LeafOptics(refl, tran, kChlrel)
 
 
 @pytest.fixture

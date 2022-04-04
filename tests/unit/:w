@@ -27,18 +27,16 @@ def test_SAILH(
     exp_rsd = test_case[4331:6493].to_numpy()
     exp_rdd = test_case[6493:].to_numpy()
 
-    rso, rdo, rsd, rdd = SAILH(
-        default_soil_optics.refl,
-        default_leaf_optics.refl,
-        default_leaf_optics.tran,
-        canopy_structure.nlayers,
-        canopy_structure.LAI,
-        canopy_structure.lidf,
-        angles.sol_angle,
-        angles.obs_angle,
-        angles.rel_angle,
-        canopy_structure.q,
-    )
+    rso, rdo, rsd, rdd = SAILH(default_soil_optics.refl,
+                   default_leaf_optics.refl,
+                   default_leaf_optics.tran,
+                   canopy_structure.nlayers,
+                   canopy_structure.LAI,
+                   canopy_structure.lidf,
+                   angles.sol_angle,
+                   angles.obs_angle,
+                   angles.rel_angle,
+                   canopy_structure.q)
 
     # raises error if not equal
     np.testing.assert_array_almost_equal(exp_rso, rso.flatten())
@@ -60,46 +58,19 @@ def test_SAILH_concurrent(
     exp_rsd = test_case[4331:6493].to_numpy()
     exp_rdd = test_case[6493:].to_numpy()
 
-    rso, rdo, rsd, rdd = SAILH(
-        default_soil_optics.refl,
-        default_leaf_optics.refl,
-        default_leaf_optics.tran,
-        canopy_structure.nlayers,
-        canopy_structure.LAI,
-        canopy_structure.lidf,
-        angles.sol_angle,
-        angles.obs_angle,
-        angles.rel_angle,
-        canopy_structure.q,
-    )
-
     concurrent_tests = 10
-    soil_refl = np.concatenate(
-        [default_soil_optics.refl for _ in range(concurrent_tests)], axis=1
-    )
-    leaf_tran = np.concatenate(
-        [default_leaf_optics.tran for _ in range(concurrent_tests)], axis=1
-    )
-    leaf_refl = np.concatenate(
-        [default_leaf_optics.refl for _ in range(concurrent_tests)], axis=1
-    )
-    lidf = np.concatenate(
-        [canopy_structure.lidf for _ in range(concurrent_tests)], axis=1
-    )
+    leaf_refl = np.concatenate([default_leaf_optics.refl for _ in range(concurrent_tests)])
 
-    rso, rdo, rsd, rdd = SAILH(
-        soil_refl,
-        leaf_refl,
-        leaf_tran,
-        np.array([canopy_structure.nlayers] * concurrent_tests),
-        np.array([canopy_structure.LAI] * concurrent_tests),
-        lidf,
-        np.array([angles.sol_angle] * concurrent_tests),
-        np.array([angles.obs_angle] * concurrent_tests),
-        np.array([angles.rel_angle] * concurrent_tests),
-        np.array([canopy_structure.q] * concurrent_tests),
-    )
-    return
+    rso, rdo, rsd, rdd = SAILH(np.array([default_soil_optics.refl] * concurrent_tests),
+                   np.array([default_leaf_optics.refl] * concurrent_tests),
+                   np.array([default_leaf_optics.tran] * concurrent_tests),
+                   np.array([canopy_structure.nlayers] * concurrent_tests),
+                   np.array([canopy_structure.LAI] * concurrent_tests),
+                   np.array([canopy_structure.lidf] * concurrent_tests),
+                   np.array([angles.sol_angle] * concurrent_tests),
+                   np.array([angles.obs_angle] * concurrent_tests),
+                   np.array([angles.rel_angle] * concurrent_tests),
+                   np.array([canopy_structure.q] * concurrent_tests))
     print(rso.shape)
     print(rdo.shape)
     print(rsd.shape)

@@ -13,30 +13,42 @@ import scipy.integrate as integrate
 from numba import cuda
 
 
-def SAILH(soil, leafopt, canopy, angles):
+def SAILH(soil_refl, leaf_refl, leaf_tran, nl, LAI, lidf, sol_angle, obs_angle, rel_angle, q):
     """
     Run the SAILH model.
 
     Parameters
     ----------
-    soil : bsm.SoilOptics
+    soil_refl :  np.array
         Contains soil reflectance spectra for 400 nm to 2400 nm
-    leafopt : prospect_5d.LeafOptics
-        Contains leaf reflectance and transmittance spectra, 400 nm to 2400 nm,
+    leaf_refl : np.array
+        Contains leaf reflectance spectra, 400 nm to 2400 nm,
         2500 to 15000 nm, and 16000 to 50000 nm.
-    canopy : CanopyStructure
-        Contains canopy information and SAIL model assumptions
-    angles : Angles
-        Holds solar zenith, observer zenith, and relative azimuth angles
+    leaf_tran : np.array
+        Contains leaf transmittance spectra, 400 nm to 2400 nm,
+        2500 to 15000 nm, and 16000 to 50000 nm.
+    nl : np.array or float
+        number of layers in canopy
+    LAI : np.array or float
+        Leaf area index
+    lidf : np.array
+        leaf inclination distribution function
+    sol_angle: np.array or float
+        solar angle
+    obs_angle: np.array or float
+        observation angle
+    rel_angle : np.array or float
+        relative azimuth angle
+    q : np.array or float
+        canopy hotspot parameter
 
     Returns
     -------
-    CanopyReflectances
-        Contains the four canopy reflectances arrays as attributes rso, rdo,
-        rsd, rdd.
+    tuple of np.arrays
+        four canopy reflectances arrays as attributes rso, rdo, rsd, rdd.
     """
 
-    if len(leafopt.refl) != 2162:
+    if leaf_refl.shape[0] != 2162:
         raise RuntimeError(
             "Parameter leafopt.refl must be of len 2162"
             " i.e. include thermal specturm. \n This error"
@@ -44,35 +56,34 @@ def SAILH(soil, leafopt, canopy, angles):
             " output directly into the SAILH model with adding"
             "\n the neccessary thermal wavelengths."
         )
-    nl = canopy.nlayers
-    LAI = canopy.LAI
-    lidf = canopy.lidf
 
-    rho = leafopt.refl
-    tau = leafopt.tran
-    rs = soil.refl
-    tts = angles.sol_angle
-    tto = angles.obs_angle
-    rel_angle = angles.rel_angle
-    q = canopy.q
+    if not (LAI > 0).any():
+        raise ValueError('Cannot run SAILH with LAI of 0.')
+    rho = leaf_refl
+    tau = leaf_tran
+    rs = soil_refl
+    tts = sol_angle
+    tto = obs_angle
+    rel_angle = rel_angle
+    global XL
+    global Pso
+    Pso_sized = np.concatenate([Pso for _ in range(rho.shape[1])], axis=1)
     rso, rdo, rsd, rdd = _SAILH_computation(
-        nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q
+        nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, Pso_sized
     )
 
-    rad = CanopyReflectances(rso, rdo, rsd, rdd)
-
-    return rad
+    return rso, rdo, rsd, rdd
 
 
 @numba.jit
-def _SAILH_computation(nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q):
+def _SAILH_computation(nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, Pso):
     dx = 1 / nl
     iLAI = LAI * dx
     deg2rad = np.pi / 180
 
     # Set geometric quantities
     # ensures symmetry at 90 and 270 deg
-    psi = abs(rel_angle - 360 * round(rel_angle / 360))
+    psi = np.abs(rel_angle - 360 * np.round(rel_angle / 360))
     psi_rad = psi * deg2rad
     sin_tts = np.sin(tts * deg2rad)
     cos_tts = np.cos(tts * deg2rad)
@@ -99,12 +110,13 @@ def _SAILH_computation(nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q):
     sofli = ftau * np.pi / (cos_tts * cos_tto)
     bfli = cos_ttli ** 2
 
+
     # integration over angles using dot product
-    k = ksli.T.dot(lidf)
-    K = koli.T.dot(lidf)
-    bf = bfli.T.dot(lidf)
-    sob = sobli.T.dot(lidf)
-    sof = sofli.T.dot(lidf)
+    k = np.diagonal(ksli.T.dot(lidf))
+    K = np.diagonal(koli.T.dot(lidf))
+    bf = np.diagonal(bfli.T.dot(lidf))
+    sob = np.diagonal(sobli.T.dot(lidf))
+    sof = np.diagonal(sofli.T.dot(lidf))
 
     # geometric factors for use with rho and tau
     sdb = 0.5 * (k + bf)  # specular to diffuse backward scattering
@@ -114,19 +126,30 @@ def _SAILH_computation(nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q):
     dob = 0.5 * (K + bf)  # diffuse to directional backward scattering
     dof = 0.5 * (K - bf)  # diffuse to directional forward scattering
 
+
     # Probabilites
     Ps = np.exp(k * XL * LAI)  # of viewing a leaf in solar direction
     Po = np.exp(K * XL * LAI)  # of viewing a leaf in observation direction
 
-    if LAI > 0:
+
+    if Ps.shape[1] == 1:
         Ps[0:nl] = Ps[0:nl] * (1 - np.exp(-k * LAI * dx)) / (k * LAI * dx)
         Po[0:nl] = Po[0:nl] * (1 - np.exp(-k * LAI * dx)) / (k * LAI * dx)
+    else:
+        for i in np.arange(Ps.shape[1]):
+            Ps[0:nl[i], i] = Ps[0:nl[i], i] * (1 - np.exp(-k[i] * LAI[i] * dx[i])) / (k[i] * LAI[i] * dx[i])
+            Po[0:nl[i], i] = Po[0:nl[i], i] * (1 - np.exp(-k[i] * LAI[i] * dx[i])) / (k[i] * LAI[i] * dx[i])
 
-    for j in range(len(XL)):
+
+    # TODO: continue here, work out how to generalize the Pso expression to multiple simulations
+    for j in range(XL.shape[0]):
         Pso[j, :] = (
             integrate.quad(Psofunction, XL[j] - dx, XL[j], args=(K, k, LAI, q, dso))[0]
-            / dx
+                / dx
         )
+    print(Pso.shape)
+    return None, None, None, None
+
 
     # NOTE: there are two lines in the original script here that deal with
     # rounding errors. I have excluded them. If this becomes a problem see

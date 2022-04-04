@@ -7,10 +7,51 @@ from SPART.sailh import CanopyStructure, SAILH, Angles
 from SPART.SPART import SpectralBands
 
 
-def test_benchmark_PROSPECT_5D(benchmark, optical_params):
+def test_benchmark_PROSPECT_5D_one_sim(benchmark, optical_params):
     # Benchmark using default prospect values
-    leaf_biology = LeafBiology(40, 0.01, 0.02, 0, 10, 10, 1.5)
-    result = benchmark(PROSPECT_5D, leaf_biology, optical_params)
+    result = benchmark(
+        PROSPECT_5D,
+        40,
+        0.01,
+        0.02,
+        0,
+        10,
+        10,
+        1.5,
+        optical_params["nr"],
+        optical_params["Kdm"],
+        optical_params["Kab"],
+        optical_params["Kca"],
+        optical_params["Kw"],
+        optical_params["Ks"],
+        optical_params["Kant"],
+        optical_params["cbc"],
+        optical_params["prot"],
+    )
+
+
+def test_benchmark_PROSPECT_5D_100_sim(benchmark, optical_params):
+    # Benchmark using default prospect values
+    num_sims = 100
+    result = benchmark(
+        PROSPECT_5D,
+        np.array([40] * num_sims),
+        np.array([0.01] * num_sims),
+        np.array([0.02] * num_sims),
+        np.array([0] * num_sims),
+        np.array([10] * num_sims),
+        np.array([10] * num_sims),
+        np.array([1.5] * num_sims),
+        optical_params["nr"],
+        optical_params["Kdm"],
+        optical_params["Kab"],
+        optical_params["Kca"],
+        optical_params["Kw"],
+        optical_params["Ks"],
+        optical_params["Kant"],
+        optical_params["cbc"],
+        optical_params["prot"],
+    )
 
 
 def test_benchmark_SAILH(benchmark, soil_optics, leaf_optics, optical_params):

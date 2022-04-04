@@ -584,7 +584,7 @@ def set_soil_refl_trans_assumptions(soilopt, spectral):
     return soilopt
 
 
-def set_leaf_refl_trans_assumptions(leafopt, leafbio, spectral):
+def set_leaf_refl_trans_assumptions(refl, tran, leafbio, spectral):
     """Sets the model assumptions about soil and leaf reflectance and
     transmittance in the thermal range.
 
@@ -604,9 +604,7 @@ def set_leaf_refl_trans_assumptions(leafopt, leafbio, spectral):
     tau = np.zeros((spectral.nwlP + spectral.nwlT, 1))
     rho[spectral.IwlT] = leafbio.rho_thermal
     tau[spectral.IwlT] = leafbio.tau_thermal
-    rho[spectral.IwlP] = leafopt.refl
-    tau[spectral.IwlP] = leafopt.tran
-    leafopt.refl = rho
-    leafopt.tran = tau
+    rho[spectral.IwlP] = refl
+    tau[spectral.IwlP] = tran
 
-    return leafopt
+    return rho, tau
