@@ -1,23 +1,6 @@
 import pytest
 import SPART
 
-sensors = [
-    "TerraAqua-MODIS",
-    "LANDSAT4-TM",
-    "LANDSAT5-TM",
-    "LANDSAT7-ETM",
-    "LANDSAT8-OLI",
-    "Sentinel2A-MSI",
-    "Sentinel2B-MSI",
-    "Sentinel3A-OLCI",
-    "Sentinel3B-OLCI",
-]
-
-
-@pytest.fixture(params=sensors[0:1])
-def sensor(request):
-    return request.param
-
 
 @pytest.fixture
 def default_SPARTSimulation(
