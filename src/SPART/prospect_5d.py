@@ -186,7 +186,7 @@ def PROSPECT_5D(leafbio, optical_params):
         Kant,
         Kcbc,
         Kprot,
-        N
+        N,
     )
 
     t1, j = make_j_t1(Kall)
@@ -200,7 +200,6 @@ def PROSPECT_5D(leafbio, optical_params):
     t_alph = calculate_tav(40, nr)
 
     t12 = calculate_tav(90, nr)
-
 
     # Call PROSPECT computation
     refl, tran, kChlrel = _PROSPECT_5D(
