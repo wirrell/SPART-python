@@ -532,18 +532,18 @@ def calculate_spectral_convolution(wl_hi, radiation_spectra, wl_srf, p_srf):
         # add new axis to form matrices so we can do simulataneous argmin
         V = V[:, np.newaxis, :]
         A = np.repeat(A[np.newaxis, :, :], V.shape[0], axis=0)
-        print((A - V).shape)
-        closest_index = np.argmin(np.abs(A - V), 1).T
+        closest_index = np.argmin(np.abs(A - V), 1)
         return closest_index
 
     indx = get_closest_index(wl_srf, wl_hi)
-    print(indx.shape)
-    return
+    # NOTE: shape was coming out 3D, we want 2D and it appears last index was just duplicate
+    rad_idx = radiation_spectra[indx][:, :, 0]
     rad = np.reshape(
-        radiation_spectra[indx], wl_srf.shape, order="F"
+        rad_idx, wl_srf.shape, order="F"
     )
     # Sum and normalize as p_srf is not normalized.
-    rad_conv = np.sum(rad * p_srf, axis=0) / np.sum(p_srf, axis=0)
+    return rad
+    rad_conv = np.sum(rad * p_srf, axis=1) / np.sum(p_srf, axis=1)
 
     return rad_conv
 
