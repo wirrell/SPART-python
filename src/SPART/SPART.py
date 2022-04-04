@@ -90,34 +90,25 @@ class SPARTConcurrent:
             self.ETpar["Ea"], DOY, sol_angles
         )
         La = calculate_spectral_convolution(
-            self.ETpar["wl_Ea"], Ra[:, 0:1], wl_srf[0:1], p_srf[0:1]
-        )
-        La = calculate_spectral_convolution(
             self.ETpar["wl_Ea"], Ra, wl_srf, p_srf
         )
-        return
 
-        # Run the bsm model
-        if self._tracker["soil"]:
-            with nvtx.annotate("BSM model run", color="red"):
-                soilopt = BSM(self._soilpar, self.optipar)
-            # Update soil optics refl and trans to include thermal
-            # values from model assumptions
-            with nvtx.annotate("Assign soil assumptions", color="purple"):
-                self.soilopt = set_soil_refl_trans_assumptions(soilopt, self.spectral)
-            self._tracker["soil"] = False
+        # Calculate soil optics of each
+        soilpars = np.array([sim.soilpar for sim in simulations])
 
-        # Run the PROSPECT model
-        if self._tracker["leaf"]:
-            with nvtx.annotate("PROSPECT 5D model run", color="yellow"):
-                leafopt = PROSPECT_5D(self._leafbio, self.optipar)
-            # Update leaf optics refl and trans to include thermal
-            # values from model assumptions
-            with nvtx.annotate("Assign leaf assumptions", color="purple"):
-                self.leafopt = set_leaf_refl_trans_assumptions(
-                    leafopt, self.leafbio, self.spectral
-                )
-            self._tracker["leaf"] = False
+        soilopts = [BSM(soilpar, self.optipar) for soilpar in soilpars]
+        # Update soil optics refl and trans to include thermal
+        # values from model assumptions
+        soilopts = [set_soil_refl_trans_assumptions(soilopt, self.spectral) for soilopt in soilopts]
+
+        leafopt = PROSPECT_5D(self._leafbio, self.optipar)
+        # Update leaf optics refl and trans to include thermal
+        # values from model assumptions
+        with nvtx.annotate("Assign leaf assumptions", color="purple"):
+            self.leafopt = set_leaf_refl_trans_assumptions(
+                leafopt, self.leafbio, self.spectral
+            )
+        self._tracker["leaf"] = False
 
         # Run the SAIL model
         with nvtx.annotate("SAILH model run", color="green"):
@@ -542,7 +533,6 @@ def calculate_spectral_convolution(wl_hi, radiation_spectra, wl_srf, p_srf):
         rad_idx, wl_srf.shape, order="F"
     )
     # Sum and normalize as p_srf is not normalized.
-    return rad
     rad_conv = np.sum(rad * p_srf, axis=1) / np.sum(p_srf, axis=1)
 
     return rad_conv

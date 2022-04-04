@@ -28,7 +28,6 @@ def BSM(soilpar, optical_params):
         water absorption constants for the spectrum and water refraction index
         for the spectrum. Loaded in in the main run_spart script and passed to this
         function.
-
     Returns
     -------
     SoilOptics
