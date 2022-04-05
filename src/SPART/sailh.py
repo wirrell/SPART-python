@@ -8,6 +8,7 @@ SAILH model outlined in:
         - W Verhoef 1998
 """
 import numpy as np
+import nvtx
 import cupy as cp
 import numba
 import scipy.integrate as integrate
@@ -134,7 +135,7 @@ def _SAILH_computation_CUDA(
             dx = cp.asarray(1 / nl)
             iLAI = cp.asarray(LAI * dx)
 
-        with nvtx.annotate('SAILH - First logic section'):
+        with nvtx.annotate('SAILH - logic section 1'):
             # Set geometric quantities
             # ensures symmetry at 90 and 270 deg
             psi = cp.abs(rel_angle - 360 * cp.round(rel_angle / 360))
@@ -214,6 +215,8 @@ def _SAILH_computation_CUDA(
             # rounding errors. I have excluded them. If this becomes a problem see
             # lines 115 / 116 in SAILH.m
 
+        with nvtx.annotate('SAILH logic section 2'):
+
             # scattering coefficients for
             sigb = ddb * rho + ddf * tau  # diffuse backscatter incidence
             sigf = ddf * rho + ddb * tau  # forward incidence
@@ -227,12 +230,14 @@ def _SAILH_computation_CUDA(
             rinf = (a - m) / sigb
             rinf2 = rinf * rinf
 
+        with nvtx.annotate('SAILH Calc J arrays'):
             # direct solar radiation
             J1k = calcJ1_CUDA(-1, m, k, LAI)
             J2k = calcJ2_CUDA(0, m, k, LAI)
             J1K = calcJ1_CUDA(-1, m, K, LAI)
             J2K = calcJ2_CUDA(0, m, K, LAI)
 
+        with nvtx.annotate('SAILH logic section 3'):
             e1 = cp.exp(-m * LAI)
             e2 = e1 ** 2
             re = rinf * e1
