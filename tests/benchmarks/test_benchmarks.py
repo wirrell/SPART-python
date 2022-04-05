@@ -77,6 +77,30 @@ def test_benchmark_SAILH_one_sim(
     return result
 
 
+def test_benchmark_SAILH_one_sim_CUDA(
+    benchmark, default_soil_optics, default_leaf_optics, optical_params
+):
+    # Benchmark using default prospect, BSM, and SAILH values
+    canopy_structure = CanopyStructure(3, -0.35, -0.15, 0.05)
+    angles = Angles(40, 0, 0)
+
+    result = benchmark(
+        SAILH,
+        default_soil_optics.refl,
+        default_leaf_optics.refl,
+        default_leaf_optics.tran,
+        canopy_structure.nlayers,
+        canopy_structure.LAI,
+        canopy_structure.lidf,
+        angles.sol_angle,
+        angles.obs_angle,
+        angles.rel_angle,
+        canopy_structure.q,
+        use_CUDA=True
+    )
+    return result
+
+
 def test_benchmark_SAILH_100_sim_CUDA(
     benchmark, default_soil_optics, default_leaf_optics, optical_params
 ):

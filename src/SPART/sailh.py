@@ -11,7 +11,9 @@ import numpy as np
 import nvtx
 import cupy as cp
 import numba
+import torch
 import scipy.integrate as integrate
+from torchquad import MonteCarlo, enable_cuda
 from SPART.helper_functions import cupy_trapz
 
 
@@ -114,11 +116,13 @@ def SAILH(
 def _SAILH_computation_CUDA(
     nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, LITAB, Pso
 ):
+    # Enable torchquad cuda, used in integration
+    enable_cuda()
 
     with cp.cuda.Device(0):
 
         # Move constituent arrays to device
-        with nvtx.annotate('SAILH - Transfer arrays to GPU'):
+        with nvtx.annotate("SAILH - Transfer arrays to GPU"):
             nl = cp.asarray(nl)
             LAI = cp.asarray(LAI)
             lidf = cp.asarray(lidf)
@@ -135,7 +139,7 @@ def _SAILH_computation_CUDA(
             dx = cp.asarray(1 / nl)
             iLAI = cp.asarray(LAI * dx)
 
-        with nvtx.annotate('SAILH - logic section 1'):
+        with nvtx.annotate("SAILH - logic section 1"):
             # Set geometric quantities
             # ensures symmetry at 90 and 270 deg
             psi = cp.abs(rel_angle - 360 * cp.round(rel_angle / 360))
@@ -201,21 +205,42 @@ def _SAILH_computation_CUDA(
                     * (1 - cp.exp(-k[i] * LAI[i] * dx[i]))
                     / (k[i] * LAI[i] * dx[i])
                 )
-        with nvtx.annotate('SAILH integration'):
-            for j in range(XL.shape[0]):
-                for i in range(Pso.shape[1]):
-                    Pso[j, i] = (
-                        integrate_psofunction_CUDA(
-                            XL[j] - dx[i], XL[j], K[i], k[i], LAI[i], q[i], dso[i]
+        with nvtx.annotate("SAILH integration"):
+            # Use pytorch and torchquad for integration
+            mc = MonteCarlo()
+            # TODO: continue here and find way to decorate integrand so that we can
+            # pass k, LAI args togehter for each sep simulation and then integrate
+            # over the decorated function
+            XL_torch = torch.as_tensor(XL, device="cuda")
+            dx_torch = torch.as_tensor(dx, device="cuda")
+            K_torch = torch.as_tensor(K, device="cuda")
+            k_torch = torch.as_tensor(k, device="cuda")
+            LAI_torch = torch.as_tensor(LAI, device="cuda")
+            q_torch = torch.as_tensor(q, device="cuda")
+            dso_torch = torch.as_tensor(dso, device="cuda")
+            for i in range(Pso.shape[1]):
+                integration_target = integrate_wrapper_CUDA(
+                    K_torch[i], k_torch[i], LAI_torch[i], q_torch[i], dso_torch[i]
+                )
+                for j in range(XL.shape[0]):
+                    Pso[j, i] = cp.asarray(
+                        (
+                            mc.integrate(
+                                integration_target,
+                                dim=1,
+                                integration_domain=[
+                                    [XL_torch[j] - dx_torch[i], XL_torch[j]]
+                                ],
+                            )
+                            / dx_torch[i]
                         )
-                        / dx[i]
                     )
 
             # NOTE: there are two lines in the original script here that deal with
             # rounding errors. I have excluded them. If this becomes a problem see
             # lines 115 / 116 in SAILH.m
 
-        with nvtx.annotate('SAILH logic section 2'):
+        with nvtx.annotate("SAILH logic section 2"):
 
             # scattering coefficients for
             sigb = ddb * rho + ddf * tau  # diffuse backscatter incidence
@@ -230,14 +255,14 @@ def _SAILH_computation_CUDA(
             rinf = (a - m) / sigb
             rinf2 = rinf * rinf
 
-        with nvtx.annotate('SAILH Calc J arrays'):
+        with nvtx.annotate("SAILH Calc J arrays"):
             # direct solar radiation
             J1k = calcJ1_CUDA(-1, m, k, LAI)
             J2k = calcJ2_CUDA(0, m, k, LAI)
             J1K = calcJ1_CUDA(-1, m, K, LAI)
             J2K = calcJ2_CUDA(0, m, K, LAI)
 
-        with nvtx.annotate('SAILH logic section 3'):
+        with nvtx.annotate("SAILH logic section 3"):
             e1 = cp.exp(-m * LAI)
             e2 = e1 ** 2
             re = rinf * e1
@@ -265,7 +290,9 @@ def _SAILH_computation_CUDA(
             rho_sd = (Qss - re * Pss) / denom
             rho_do = (Qoo - re * Poo) / denom
 
-            T1 = v2 * s1 * (Z - J1k * tau_oo) / (K + m) + v1 * s2 * (Z - J1K * tau_ss) / (k + m)
+            T1 = v2 * s1 * (Z - J1k * tau_oo) / (K + m) + v1 * s2 * (
+                Z - J1K * tau_ss
+            ) / (k + m)
             T2 = -(Qoo * rho_sd + Poo * tau_sd) * rinf
             rho_sod = (T1 + T2) / (1 - rinf2)
 
@@ -369,11 +396,12 @@ def _SAILH_computation(
     for j in range(XL.shape[0]):
         for i in range(Pso.shape[1]):
             Pso[j, i] = (
-                integrate_psofunction(
+                integrate.quad(
+                    Psofunction,
                     XL[j] - dx[i],
                     XL[j],
-                    K[i], k[i], LAI[i], q[i], dso[i]
-                )
+                    args=(K[i], k[i], LAI[i], q[i], dso[i]),
+                )[0]
                 / dx[i]
             )
 
@@ -457,41 +485,11 @@ def _SAILH_computation(
     return rso, rdo, rsd, rdd
 
 
-def integrate_psofunction(lower_limit, upper_limit, *args):
-    if upper_limit < lower_limit:
-        upper_limit = temp
-        upper_limit = lower_limit
-        lower_limit = temp 
+def integrate_wrapper_CUDA(*args):
+    def integration_target(x):
+        return Psofunction_pytorch(x, *args)
 
-    granularity = 100000
-    dx = (upper_limit - lower_limit) / granularity
-
-    y_values = np.zeros(granularity + 1)
-
-    x = lower_limit
-    i = 0
-    while x <= upper_limit:
-        y_values[i] = Psofunction(x, *args)
-        x = x + dx
-        i = i + 1
-
-    return np.trapz(y_values, dx=dx)
-
-
-def integrate_psofunction_CUDA(lower_limit, upper_limit, *args):
-    granularity = 1000
-    dx = (upper_limit - lower_limit) / granularity
-
-    y_values = cp.zeros(granularity + 1)
-
-    x = lower_limit
-    i = 0
-    while x <= upper_limit:
-        y_values[i] = Psofunction_CUDA(x, *args)
-        x = x + dx
-        i = i + 1
-
-    return cupy_trapz(y_values, dx=dx)
+    return integration_target
 
 
 @numba.njit
@@ -731,15 +729,16 @@ def Psofunction(x, K, k, LAI, q, dso):
     return pso
 
 
-def Psofunction_CUDA(x, K, k, LAI, q, dso):
+def Psofunction_pytorch(x, K, k, LAI, q, dso):
     # From APPENDIX IV of original matlab code
     if dso != 0:
         alpha = (dso / q) * 2 / (k + K)
-        pso = cp.exp(
-            (K + k) * LAI * x + cp.sqrt(K * k) * LAI / alpha * (1 - cp.exp(x * alpha))
+        pso = torch.exp(
+            (K + k) * LAI * x
+            + torch.sqrt(K * k) * LAI / alpha * (1 - torch.exp(x * alpha))
         )
     else:
-        pso = cp.exp((K + k) * LAI * x - cp.sqrt(K * k) * LAI * x)
+        pso = torch.exp((K + k) * LAI * x - torch.sqrt(K * k) * LAI * x)
 
     return pso
 
