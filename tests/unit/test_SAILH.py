@@ -27,12 +27,83 @@ def test_SAILH(
     exp_rsd = test_case[4331:6493].to_numpy()
     exp_rdd = test_case[6493:].to_numpy()
 
-    result = SAILH(default_soil_optics, default_leaf_optics, canopy_structure, angles)
+    rso, rdo, rsd, rdd = SAILH(
+        default_soil_optics.refl,
+        default_leaf_optics.refl,
+        default_leaf_optics.tran,
+        canopy_structure.nlayers,
+        canopy_structure.LAI,
+        canopy_structure.lidf,
+        angles.sol_angle,
+        angles.obs_angle,
+        angles.rel_angle,
+        canopy_structure.q,
+    )
 
     # raises error if not equal
-    np.testing.assert_array_almost_equal(exp_rso, result.rso.flatten())
-    np.testing.assert_array_almost_equal(exp_rdo, result.rdo.flatten())
-    np.testing.assert_array_almost_equal(exp_rsd, result.rsd.flatten())
-    np.testing.assert_array_almost_equal(exp_rdd, result.rdd.flatten())
+    np.testing.assert_array_almost_equal(exp_rso, rso.flatten())
+    np.testing.assert_array_almost_equal(exp_rdo, rdo.flatten())
+    np.testing.assert_array_almost_equal(exp_rsd, rsd.flatten())
+    np.testing.assert_array_almost_equal(exp_rdd, rdd.flatten())
+
+    assert True
+
+
+def test_SAILH_concurrent(
+    sail_test_case, optical_params, default_leaf_optics, default_soil_optics
+):
+    num, test_case = sail_test_case
+    canopy_structure = CanopyStructure(*test_case[:4].to_numpy())
+    angles = Angles(*test_case[4:7].to_numpy())
+    exp_rso = test_case[7:2169].to_numpy()
+    exp_rdo = test_case[2169:4331].to_numpy()
+    exp_rsd = test_case[4331:6493].to_numpy()
+    exp_rdd = test_case[6493:].to_numpy()
+
+    rso, rdo, rsd, rdd = SAILH(
+        default_soil_optics.refl,
+        default_leaf_optics.refl,
+        default_leaf_optics.tran,
+        canopy_structure.nlayers,
+        canopy_structure.LAI,
+        canopy_structure.lidf,
+        angles.sol_angle,
+        angles.obs_angle,
+        angles.rel_angle,
+        canopy_structure.q,
+    )
+
+    concurrent_tests = 10
+    soil_refl = np.concatenate(
+        [default_soil_optics.refl for _ in range(concurrent_tests)], axis=1
+    )
+    leaf_tran = np.concatenate(
+        [default_leaf_optics.tran for _ in range(concurrent_tests)], axis=1
+    )
+    leaf_refl = np.concatenate(
+        [default_leaf_optics.refl for _ in range(concurrent_tests)], axis=1
+    )
+    lidf = np.concatenate(
+        [canopy_structure.lidf for _ in range(concurrent_tests)], axis=1
+    )
+
+    rso, rdo, rsd, rdd = SAILH(
+        soil_refl,
+        leaf_refl,
+        leaf_tran,
+        np.array([canopy_structure.nlayers] * concurrent_tests),
+        np.array([canopy_structure.LAI] * concurrent_tests),
+        lidf,
+        np.array([angles.sol_angle] * concurrent_tests),
+        np.array([angles.obs_angle] * concurrent_tests),
+        np.array([angles.rel_angle] * concurrent_tests),
+        np.array([canopy_structure.q] * concurrent_tests),
+    )
+
+    # raises error if not equal
+    np.testing.assert_array_almost_equal(exp_rso, rso[:, 0].flatten())
+    np.testing.assert_array_almost_equal(exp_rdo, rdo[:, 0].flatten())
+    np.testing.assert_array_almost_equal(exp_rsd, rsd[:, 0].flatten())
+    np.testing.assert_array_almost_equal(exp_rdd, rdd[:, 0].flatten())
 
     assert True

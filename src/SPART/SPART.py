@@ -22,6 +22,8 @@ import numpy as np
 import pandas as pd
 import nvtx
 from pathlib import Path
+from typing import List
+from dataclasses import dataclass
 from SPART.bsm import BSM, SoilParameters, SoilParametersFromFile
 from SPART.prospect_5d import PROSPECT_5D, LeafBiology
 from SPART.sailh import SAILH, CanopyStructure, Angles
@@ -30,6 +32,137 @@ from SPART.smac import SMAC, AtmosphericProperties
 
 # TODO: look at threading bsm and PROSPECT as they don't require each
 # other
+
+
+@dataclass
+class SPARTSimulation:
+    """
+    Holds all the different parameter classes for the constituent models.
+    """
+
+    soilpar: SoilParameters
+    leafbio: LeafBiology
+    canopy: CanopyStructure
+    atm: AtmosphericProperties
+    angles: Angles
+    sensor: str
+    DOY: int
+
+
+class SPARTConcurrent:
+    """
+    Concurrent implementation of SPART model.
+    """
+
+    def __init__(self):
+        self.spectral = SpectralBands()
+        self.optipar = load_optical_parameters()
+        self.ETpar = load_ET_parameters()
+
+    def run_simulations(self, simulations: List[SPARTSimulation]):
+        """Run the run_spart model for all simulations.
+
+        Parameters
+        ----------
+        debug : bool
+            if True, returns the simulated BSM derived soil spectra as well
+            as additional output column. Default: False
+
+        Returns
+        -------
+        list of pd.DataFrame
+            Contains the radiances and reflectances columns 'Band' 'L_TOA'
+            'R_TOA' 'R_TOC' index by central band wavelength
+        """
+
+        num_simulations = len(simulations)
+
+        sensor_infos = [load_sensor_info(sim.sensor) for sim in simulations]
+
+        # Calculate ET radiance from the sun for look angles and DOY
+        # Calculate extra-terrestrial radiance for the day
+        sol_angles = np.array([sim.angles.sol_angle for sim in simulations])
+        wl_srf = np.array([s_info["wl_srf_smac"] for s_info in sensor_infos])
+        p_srf = np.array([s_info["p_srf_smac"] for s_info in sensor_infos])
+        DOY = np.array([sim.DOY for sim in simulations])
+
+        Ra = calculate_ET_radiance(self.ETpar["Ea"], DOY, sol_angles)
+        La = calculate_spectral_convolution(self.ETpar["wl_Ea"], Ra, wl_srf, p_srf)
+
+        # Calculate soil optics of each
+        soilpars = np.array([sim.soilpar for sim in simulations])
+
+        soilopts = [BSM(soilpar, self.optipar) for soilpar in soilpars]
+        # Update soil optics refl and trans to include thermal
+        # values from model assumptions
+        soilopts = [
+            set_soil_refl_trans_assumptions(soilopt, self.spectral)
+            for soilopt in soilopts
+        ]
+
+        leafopt = PROSPECT_5D(self._leafbio, self.optipar)
+        # Update leaf optics refl and trans to include thermal
+        # values from model assumptions
+        with nvtx.annotate("Assign leaf assumptions", color="purple"):
+            self.leafopt = set_leaf_refl_trans_assumptions(
+                leafopt, self.leafbio, self.spectral
+            )
+        self._tracker["leaf"] = False
+
+        # Run the SAIL model
+        with nvtx.annotate("SAILH model run", color="green"):
+            rad = SAILH(self.soilopt, self.leafopt, self._canopy, self._angles)
+        self.canopyopt = rad
+
+        sensor_wavelengths = self.sensorinfo["wl_smac"].T[0]
+
+        # Interpolate whole wavelength radiances to sensor wavlengths
+        with nvtx.annotate(
+            "Interpolating SAILH outputs to sensor wavelengths", color="purple"
+        ):
+            rv_so = np.interp(sensor_wavelengths, self.spectral.wlS, rad.rso.T[0])
+            rv_do = np.interp(sensor_wavelengths, self.spectral.wlS, rad.rdo.T[0])
+            rv_dd = np.interp(sensor_wavelengths, self.spectral.wlS, rad.rdd.T[0])
+            rv_sd = np.interp(sensor_wavelengths, self.spectral.wlS, rad.rsd.T[0])
+
+        # Run the smac atmosphere model
+        if self._tracker["atm"] or self._tracker["angles"] or self._tracker["sensor"]:
+            with nvtx.annotate("SMAC model run", color="blue"):
+                atmopt = SMAC(self._angles, self._atm, self.sensorinfo["SMAC_coef"])
+            self.atmopt = atmopt
+            self._tracker["atm"] = False
+            self._tracker["angles"] = False
+            self._tracker["sensor"] = False
+
+        # Upscale TOC to TOA
+        ta_ss = self.atmopt.Ta_ss
+        ta_sd = self.atmopt.Ta_sd
+        ta_oo = self.atmopt.Ta_oo
+        ta_do = self.atmopt.Ta_do
+        ra_dd = self.atmopt.Ra_dd
+        ra_so = self.atmopt.Ra_so
+        T_g = self.atmopt.Tg
+
+        rtoa0 = ra_so + ta_ss * rv_so * ta_oo
+        rtoa1 = (
+            (ta_sd * rv_do + ta_ss * rv_sd * ra_dd * rv_do)
+            * ta_oo
+            / (1 - rv_dd * ra_dd)
+        )
+        rtoa2 = (ta_ss * rv_sd + ta_sd * rv_dd) * ta_do / (1 - rv_dd * ra_dd)
+        self.R_TOC = (ta_ss * rv_so + ta_sd * rv_do) / (ta_ss + ta_sd)
+        self.R_TOA = T_g * (rtoa0 + rtoa1 + rtoa2)
+        self.L_TOA = self._La * self.R_TOA
+
+        bands = self.sensorinfo["band_id_smac"]
+
+        results_table = pd.DataFrame(
+            zip(bands, self.L_TOA[0], self.R_TOA[0], self.R_TOC[0]),
+            index=sensor_wavelengths,
+            columns=["Band", "L_TOA", "R_TOA", "R_TOC"],
+        )
+
+        return results_table
 
 
 class SPART:
@@ -188,11 +321,11 @@ class SPART:
 
         # Run the bsm model
         if self._tracker["soil"]:
-            with nvtx.annotate('BSM model run', color='red'):
+            with nvtx.annotate("BSM model run", color="red"):
                 soilopt = BSM(self._soilpar, self.optipar)
             # Update soil optics refl and trans to include thermal
             # values from model assumptions
-            with nvtx.annotate('Assign soil assumptions', color='purple'):
+            with nvtx.annotate("Assign soil assumptions", color="purple"):
                 self.soilopt = set_soil_refl_trans_assumptions(soilopt, self.spectral)
             self._tracker["soil"] = False
 
@@ -201,20 +334,23 @@ class SPART:
             leafopt = PROSPECT_5D(self._leafbio, self.optipar)
             # Update leaf optics refl and trans to include thermal
             # values from model assumptions
-            with nvtx.annotate('Assign leaf assumptions', color='purple'):
+            with nvtx.annotate("Assign leaf assumptions", color="purple"):
                 self.leafopt = set_leaf_refl_trans_assumptions(
                     leafopt, self.leafbio, self.spectral
                 )
             self._tracker["leaf"] = False
 
         # Run the SAIL model
-        rad = SAILH(self.soilopt, self.leafopt, self._canopy, self._angles)
+        with nvtx.annotate("SAILH model run", color="green"):
+            rad = SAILH(self.soilopt, self.leafopt, self._canopy, self._angles)
         self.canopyopt = rad
 
         sensor_wavelengths = self.sensorinfo["wl_smac"].T[0]
 
         # Interpolate whole wavelength radiances to sensor wavlengths
-        with nvtx.annotate('Interpolating SAILH outputs to sensor wavelengths', color='purple'):
+        with nvtx.annotate(
+            "Interpolating SAILH outputs to sensor wavelengths", color="purple"
+        ):
             rv_so = np.interp(sensor_wavelengths, self.spectral.wlS, rad.rso.T[0])
             rv_do = np.interp(sensor_wavelengths, self.spectral.wlS, rad.rdo.T[0])
             rv_dd = np.interp(sensor_wavelengths, self.spectral.wlS, rad.rdd.T[0])
@@ -222,7 +358,7 @@ class SPART:
 
         # Run the smac atmosphere model
         if self._tracker["atm"] or self._tracker["angles"] or self._tracker["sensor"]:
-            with nvtx.annotate('SMAC model run', color='blue'):
+            with nvtx.annotate("SMAC model run", color="blue"):
                 atmopt = SMAC(self._angles, self._atm, self.sensorinfo["SMAC_coef"])
             self.atmopt = atmopt
             self._tracker["atm"] = False
@@ -353,7 +489,7 @@ def calculate_ET_radiance(Ea, DOY, tts):
     return La
 
 
-def calculate_spectral_convolution(wl_hi, radiation_spectra, sensorinfo):
+def calculate_spectral_convolution(wl_hi, radiation_spectra, wl_srf, p_srf):
     """
     Calculate the spectral convolution for a given spectral response function.
 
@@ -363,33 +499,35 @@ def calculate_spectral_convolution(wl_hi, radiation_spectra, sensorinfo):
         Arrays of wavelengths to be convolved
     radiation_spectra : np.array
         irradiance or radiance to be convolved
-    sensorinfo : dict
-        Contains keys 'wl_srf' -> number of bands contrib * number of bands
-        post con
-        'p_srf' -> relative contribution of each band
+    wl_srf : np.array
+        number of bands contrib * number of bands post con
+    p_srf : np.array 
+        relative contribution of each band
 
     Returns
     -------
     np.array
         Convolution result
     """
-    wl_srf = sensorinfo["wl_srf_smac"]
-    p_srf = sensorinfo["p_srf_smac"]
+    # reshape wl_hi array to dimensions of radiation_spectra
 
     def get_closest_index(V, N):
         # Find the indices of the closest entries in N to the values of those
         # in V
-        V = np.reshape(V, (V.shape[0] * V.shape[1], 1), order="F")
-        A = np.repeat(N, len(V), axis=1)
-        closest_index = np.argmin(np.abs(A - V.T), 0)
+        V = np.reshape(V, (V.shape[0], V.shape[1] * V.shape[2]), order="F")
+        A = np.repeat(N, V.shape[1], axis=1)
+        # add new axis to form matrices so we can do simulataneous argmin
+        V = V[:, np.newaxis, :]
+        A = np.repeat(A[np.newaxis, :, :], V.shape[0], axis=0)
+        closest_index = np.argmin(np.abs(A - V), 1)
         return closest_index
 
     indx = get_closest_index(wl_srf, wl_hi)
-    rad = np.reshape(
-        radiation_spectra[indx], (wl_srf.shape[0], wl_srf.shape[1]), order="F"
-    )
+    # NOTE: shape was coming out 3D, we want 2D and it appears last index was just duplicate
+    rad_idx = radiation_spectra[indx][:, :, 0]
+    rad = np.reshape(rad_idx, wl_srf.shape, order="F")
     # Sum and normalize as p_srf is not normalized.
-    rad_conv = np.sum(rad * p_srf, axis=0) / np.sum(p_srf, axis=0)
+    rad_conv = np.sum(rad * p_srf, axis=1) / np.sum(p_srf, axis=1)
 
     return rad_conv
 
@@ -440,7 +578,7 @@ def set_soil_refl_trans_assumptions(soilopt, spectral):
     return soilopt
 
 
-def set_leaf_refl_trans_assumptions(leafopt, leafbio, spectral):
+def set_leaf_refl_trans_assumptions(refl, tran, leafbio, spectral):
     """Sets the model assumptions about soil and leaf reflectance and
     transmittance in the thermal range.
 
@@ -460,9 +598,7 @@ def set_leaf_refl_trans_assumptions(leafopt, leafbio, spectral):
     tau = np.zeros((spectral.nwlP + spectral.nwlT, 1))
     rho[spectral.IwlT] = leafbio.rho_thermal
     tau[spectral.IwlT] = leafbio.tau_thermal
-    rho[spectral.IwlP] = leafopt.refl
-    tau[spectral.IwlP] = leafopt.tran
-    leafopt.refl = rho
-    leafopt.tran = tau
+    rho[spectral.IwlP] = refl
+    tau[spectral.IwlP] = tran
 
-    return leafopt
+    return rho, tau

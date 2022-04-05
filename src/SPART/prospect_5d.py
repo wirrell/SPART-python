@@ -117,76 +117,20 @@ class LeafOptics:
 
 # mangling __PROSPECT_5D_ - runs as an internal function
 # see we can pull out all non-jittable functions and then just have one jit call to this larger-scoped function
-def PROSPECT_5D(leafbio, optical_params):
+def PROSPECT_5D(
+    Cab, Cdm, Cw, Cs, Cca, Cant, N, nr, Kdm, Kab, Kca, Kw, Ks, Kant, Kcbc, Kprot
+):
     """
-    PROSPECT_5D model.
-
-    Parameters
-    ----------
-    leafbio : LeafBiology
-        Object holding user specified leaf biology model parameters.
-    optical_params : dict
-        Optical parameter constants. Loaded externally and passed in.
+    PROSPECT_5D model with model runs concurrent.
 
     Returns
     -------
-    LeafOptics
-        Contains attributes relf, tran, kChlrel for reflectance, transmittance
+    tuple of np arrays
+        refl, tran, kChlrel for  reflectance, transmittance
         and contribution of chlorophyll over the 400 nm to 2400 nm spectrum
     """
-    # Leaf parameters
-    Cab = leafbio.Cab
-    Cca = leafbio.Cca
-    Cw = leafbio.Cw
-    Cdm = leafbio.Cdm
-    Cs = leafbio.Cs
-    Cant = leafbio.Cant
-    N = leafbio.N
-    PROT = leafbio.PROT  # PROSPECT-PRO
-    CBC = leafbio.CBC  # PROSPECT-PRO
-
-    # check if PROT and/or CBC are non-zero. If true, PROSPECT-PRO is run.
-    # Before, check if the parameterization is physically plausible
-    # (Cdm = PROT + CBC)
-    if PROT > 0.0 or CBC > 0.0:
-        if Cdm > 0:
-            print(
-                "WARNING: When setting PROT and/or CBC > 0. we\n"
-                "assume that PROSPECT-PRO was called. Cdm will be\n"
-                "therefore set to zero (Cdm = PROT + CBC)"
-            )
-            Cdm = 0.0
-
-    # Model constants
-    nr = optical_params["nr"]
-    Kdm = optical_params["Kdm"]
-    Kab = optical_params["Kab"]
-    Kca = optical_params["Kca"]
-    Kw = optical_params["Kw"]
-    Ks = optical_params["Ks"]
-    Kant = optical_params["Kant"]
-    # add PROSPECT-PRO optical parameters (Féret et al., 2021)
-    Kcbc = optical_params["cbc"]
-    Kprot = optical_params["prot"]
-
     Kall = make_Kall(
-        Cab,
-        Cca,
-        Cdm,
-        Cw,
-        Cs,
-        Cant,
-        CBC,
-        PROT,
-        Kab,
-        Kca,
-        Kdm,
-        Kw,
-        Ks,
-        Kant,
-        Kcbc,
-        Kprot,
-        N
+        Cab, Cca, Cdm, Cw, Cs, Cant, Kab, Kca, Kdm, Kw, Ks, Kant, Kcbc, Kprot, N
     )
 
     t1, j = make_j_t1(Kall)
@@ -201,64 +145,59 @@ def PROSPECT_5D(leafbio, optical_params):
 
     t12 = calculate_tav(90, nr)
 
-
     # Call PROSPECT computation
     refl, tran, kChlrel = _PROSPECT_5D(
         t1, j, t2, tau, Kall, kChlrel, t_alph, t12, nr, N
     )
 
-    # We flatten the arrays here so they go from (2001, 1), to (2001,)
-    leafopt = LeafOptics(refl, tran, kChlrel)
-
-    return leafopt
+    return refl, tran, kChlrel
 
 
 @numba.njit
 def _PROSPECT_5D(t1, j, t2, tau, Kall, kChlrel, t_alph, t12, nr, N):
+    r_alph = 1 - t_alph
+    r12 = 1 - t12
+    t21 = t12 / (nr ** 2)
+    r21 = 1 - t21
 
-    with nvtx.annotate('PROSPECT 5D model run', color='yellow'):
-        r_alph = 1 - t_alph
-        r12 = 1 - t12
-        t21 = t12 / (nr ** 2)
-        r21 = 1 - t21
+    # top surface side
+    denom = 1 - r21 * r21 * tau ** 2
+    Ta = t_alph * tau * t21 / denom
+    Ra = r_alph + r21 * tau * Ta
 
-        # top surface side
-        denom = 1 - r21 * r21 * tau ** 2
-        Ta = t_alph * tau * t21 / denom
-        Ra = r_alph + r21 * tau * Ta
+    # bottom surface side
+    t = t12 * tau * t21 / denom
+    r = r12 + r21 * tau * t
 
-        # bottom surface side
-        t = t12 * tau * t21 / denom
-        r = r12 + r21 * tau * t
+    # Stokes equations to compute properties of next N-1 layers (N real)
 
-        # Stokes equations to compute properties of next N-1 layers (N real)
+    # Normal case
+    D = np.sqrt((1 + r + t) * (1 + r - t) * (1 - r + t) * (1 - r - t))
+    rq = r ** 2
+    tq = t ** 2
+    a = (1 + rq - tq + D) / (2 * r)
+    b = (1 - rq + tq + D) / (2 * t)
 
-        # Normal case
-        D = np.sqrt((1 + r + t) * (1 + r - t) * (1 - r + t) * (1 - r - t))
-        rq = r ** 2
-        tq = t ** 2
-        a = (1 + rq - tq + D) / (2 * r)
-        b = (1 - rq + tq + D) / (2 * t)
+    bNm1 = b ** (N - 1)
+    bN2 = bNm1 ** 2
+    a2 = a ** 2
+    denom = a2 * bN2 - 1
+    Rsub = a * (bN2 - 1) / denom
+    Tsub = bNm1 * (a2 - 1) / denom
 
-        bNm1 = b ** (N - 1)
-        bN2 = bNm1 ** 2
-        a2 = a ** 2
-        denom = a2 * bN2 - 1
-        Rsub = a * (bN2 - 1) / denom
-        Tsub = bNm1 * (a2 - 1) / denom
+    # Case of zero absorption
+    j = np.argwhere(r + t >= 1)
+    for idx in j:
+        Tsub[idx] = t[idx] / (t[idx] + (1 - t[idx]) * (N - 1))
+        Rsub[idx] = 1 - Tsub[idx]
 
-        # Case of zero absorption
-        j = np.where(r + t >= 1)[0]
-        Tsub[j] = t[j] / (t[j] + (1 - t[j]) * (N - 1))
-        Rsub[j] = 1 - Tsub[j]
+    # Reflectance and transmittance of the leaf:
+    #   combine top llayer with next N-1 layers
+    denom = 1 - Rsub * r
+    tran = Ta * Tsub / denom
+    refl = Ra + Ta * Rsub * t / denom
 
-        # Reflectance and transmittance of the leaf:
-        #   combine top llayer with next N-1 layers
-        denom = 1 - Rsub * r
-        tran = Ta * Tsub / denom
-        refl = Ra + Ta * Rsub * t / denom
-
-        return refl, tran, kChlrel
+    return refl, tran, kChlrel
 
 
 # expint can't be accelerated via numba because of scipy integrate
@@ -273,42 +212,33 @@ def expint(x):
 
 
 @numba.njit
-def make_Kall(
-    Cab, Cca, Cdm, Cw, Cs, Cant, CBC, PROT, Kab, Kca, Kdm, Kw, Ks, Kant, Kcbc, Kprot, N
-):
+def make_Kall(Cab, Cca, Cdm, Cw, Cs, Cant, Kab, Kca, Kdm, Kw, Ks, Kant, Kcbc, Kprot, N):
     # Compact leaf layer
-    Kall = (
-        Cab * Kab
-        + Cca * Kca
-        + Cdm * Kdm
-        + Cw * Kw
-        + Cs * Ks
-        + Cant * Kant
-        + CBC * Kcbc
-        + PROT * Kprot
-    ) / N
+    Kall = (Cab * Kab + Cca * Kca + Cdm * Kdm + Cw * Kw + Cs * Ks + Cant * Kant) / N
     return Kall
 
 
 # Non-conservative scattering (normal case)
 @numba.njit
 def make_j_t1(Kall):
-    j = np.where(Kall > 0)[0]
+    j = np.argwhere(Kall)
     t1 = (1 - Kall) * np.exp(-Kall)
     return t1, j
 
 
 @numba.njit
-def make_tau(t1, t2, j):
-    tau = np.ones((len(t1), 1))
-    tau[j] = t1[j] + t2[j]
+def make_tau(t1, t2, idxs):
+    tau = np.ones(t1.shape, dtype=np.float64)
+    for idx in idxs:
+        tau[idx] = t1[idx] + t2[idx]
     return tau
 
 
 @numba.njit
 def make_KChlrel(t1, Cab, Kab, j, N, Kall):
-    kChlrel = np.zeros((len(t1), 1))
-    kChlrel[j] = Cab * Kab[j] / (Kall[j] * N)
+    kChlrel = np.zeros(t1.shape)
+    for idx in j:
+        kChlrel[idx] = Cab * Kab[idx] / (Kall[idx] * N)
     return kChlrel
 
 

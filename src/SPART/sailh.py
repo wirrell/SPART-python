@@ -13,30 +13,44 @@ import scipy.integrate as integrate
 from numba import cuda
 
 
-def SAILH(soil, leafopt, canopy, angles):
+def SAILH(
+    soil_refl, leaf_refl, leaf_tran, nl, LAI, lidf, sol_angle, obs_angle, rel_angle, q
+):
     """
     Run the SAILH model.
 
     Parameters
     ----------
-    soil : bsm.SoilOptics
+    soil_refl :  np.array
         Contains soil reflectance spectra for 400 nm to 2400 nm
-    leafopt : prospect_5d.LeafOptics
-        Contains leaf reflectance and transmittance spectra, 400 nm to 2400 nm,
+    leaf_refl : np.array
+        Contains leaf reflectance spectra, 400 nm to 2400 nm,
         2500 to 15000 nm, and 16000 to 50000 nm.
-    canopy : CanopyStructure
-        Contains canopy information and SAIL model assumptions
-    angles : Angles
-        Holds solar zenith, observer zenith, and relative azimuth angles
+    leaf_tran : np.array
+        Contains leaf transmittance spectra, 400 nm to 2400 nm,
+        2500 to 15000 nm, and 16000 to 50000 nm.
+    nl : np.array or float
+        number of layers in canopy
+    LAI : np.array or float
+        Leaf area index
+    lidf : np.array
+        leaf inclination distribution function
+    sol_angle: np.array or float
+        solar angle
+    obs_angle: np.array or float
+        observation angle
+    rel_angle : np.array or float
+        relative azimuth angle
+    q : np.array or float
+        canopy hotspot parameter
 
     Returns
     -------
-    CanopyReflectances
-        Contains the four canopy reflectances arrays as attributes rso, rdo,
-        rsd, rdd.
+    tuple of np.arrays
+        four canopy reflectances arrays as attributes rso, rdo, rsd, rdd.
     """
 
-    if len(leafopt.refl) != 2162:
+    if leaf_refl.shape[0] != 2162:
         raise RuntimeError(
             "Parameter leafopt.refl must be of len 2162"
             " i.e. include thermal specturm. \n This error"
@@ -44,195 +58,227 @@ def SAILH(soil, leafopt, canopy, angles):
             " output directly into the SAILH model with adding"
             "\n the neccessary thermal wavelengths."
         )
-    nl = canopy.nlayers
-    LAI = canopy.LAI
-    lidf = canopy.lidf
 
-    rho = leafopt.refl
-    tau = leafopt.tran
-    rs = soil.refl
-    tts = angles.sol_angle
-    tto = angles.obs_angle
-    rel_angle = angles.rel_angle
-    q = canopy.q
+    if isinstance(LAI, np.ndarray):
+        if not (LAI > 0).any():
+            raise ValueError("Cannot run SAILH with LAI of 0.")
+    else:
+        if not LAI > 0:
+            raise ValueError("Cannot run SAILH with LAI of 0.")
+
+    rho = leaf_refl
+    tau = leaf_tran
+    rs = soil_refl
+
+    # Make floats 1d arrays to smooth out computation logic
+    nl = np.atleast_1d(nl)
+    tts = np.atleast_1d(sol_angle)
+    tto = np.atleast_1d(obs_angle)
+    rel_angle = np.atleast_1d(rel_angle)
+    LAI = np.atleast_1d(LAI)
+    q = np.atleast_1d(q)
+
+    # Resized pre-defined arrays for purpose
+    global XL
+    global Pso
+    Pso_sized = np.concatenate([Pso for _ in range(rho.shape[1])], axis=1)
+
+    # run sailh computation
     rso, rdo, rsd, rdd = _SAILH_computation(
-        nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q
+        nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, Pso_sized
     )
 
-    rad = CanopyReflectances(rso, rdo, rsd, rdd)
-
-    return rad
+    return rso, rdo, rsd, rdd
 
 
 @numba.jit
-def _SAILH_computation(nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q):
-    with nvtx.annotate('SAILH model run', color='green'):
-        dx = 1 / nl
-        iLAI = LAI * dx
-        deg2rad = np.pi / 180
+def _SAILH_computation(nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, Pso):
+    dx = 1 / nl
+    iLAI = LAI * dx
+    deg2rad = np.pi / 180
 
-        # Set geometric quantities
-        # ensures symmetry at 90 and 270 deg
-        psi = abs(rel_angle - 360 * round(rel_angle / 360))
-        psi_rad = psi * deg2rad
-        sin_tts = np.sin(tts * deg2rad)
-        cos_tts = np.cos(tts * deg2rad)
-        tan_tts = np.tan(tts * deg2rad)
+    # Set geometric quantities
+    # ensures symmetry at 90 and 270 deg
+    psi = np.abs(rel_angle - 360 * np.round(rel_angle / 360))
+    psi_rad = psi * deg2rad
+    sin_tts = np.sin(tts * deg2rad)
+    cos_tts = np.cos(tts * deg2rad)
+    tan_tts = np.tan(tts * deg2rad)
 
-        sin_tto = np.sin(tto * deg2rad)
-        cos_tto = np.cos(tto * deg2rad)
-        tan_tto = np.tan(tto * deg2rad)
+    sin_tto = np.sin(tto * deg2rad)
+    cos_tto = np.cos(tto * deg2rad)
+    tan_tto = np.tan(tto * deg2rad)
 
-        sin_ttli = np.sin(LITAB * deg2rad)
-        cos_ttli = np.cos(LITAB * deg2rad)
+    sin_ttli = np.sin(LITAB * deg2rad)
+    cos_ttli = np.cos(LITAB * deg2rad)
 
-        dso = np.sqrt(tan_tts ** 2 + tan_tto ** 2 - 2 * tan_tts * tan_tto * np.cos(psi_rad))
+    dso = np.sqrt(tan_tts ** 2 + tan_tto ** 2 - 2 * tan_tts * tan_tto * np.cos(psi_rad))
 
-        # geometric factors associated with extinction and scattering
-        chi_s, chi_o, frho, ftau = _volscatt(
-            sin_tts, cos_tts, sin_tto, cos_tto, psi_rad, sin_ttli, cos_ttli
+    # geometric factors associated with extinction and scattering
+    chi_s, chi_o, frho, ftau = _volscatt(
+        sin_tts, cos_tts, sin_tto, cos_tto, psi_rad, sin_ttli, cos_ttli
+    )
+    # extinction coefficient in direction of sun per
+    ksli = chi_s / cos_tts  # leaf angle
+    koli = chi_o / cos_tto  # observer angle
+    # area scattering coefficient fractions
+    sobli = frho * np.pi / (cos_tts * cos_tto)
+    sofli = ftau * np.pi / (cos_tts * cos_tto)
+    bfli = cos_ttli ** 2
+
+    # integration over angles using dot product
+    k = np.diagonal(ksli.T.dot(lidf))
+    K = np.diagonal(koli.T.dot(lidf))
+    bf = np.diagonal(bfli.T.dot(lidf))
+    sob = np.diagonal(sobli.T.dot(lidf))
+    sof = np.diagonal(sofli.T.dot(lidf))
+
+    # geometric factors for use with rho and tau
+    sdb = 0.5 * (k + bf)  # specular to diffuse backward scattering
+    sdf = 0.5 * (k - bf)  # specular to diffuse forward scattering
+    ddb = 0.5 * (1 + bf)  # diffuse to diffuse backward scattering
+    ddf = 0.5 * (1 - bf)  # diffuse to diffuse forward scattering
+    dob = 0.5 * (K + bf)  # diffuse to directional backward scattering
+    dof = 0.5 * (K - bf)  # diffuse to directional forward scattering
+
+    # Probabilites
+    Ps = np.exp(k * XL * LAI)  # of viewing a leaf in solar direction
+    Po = np.exp(K * XL * LAI)  # of viewing a leaf in observation direction
+
+    for i in np.arange(Ps.shape[1]):
+        Ps[0 : nl[i], i] = (
+            Ps[0 : nl[i], i]
+            * (1 - np.exp(-k[i] * LAI[i] * dx[i]))
+            / (k[i] * LAI[i] * dx[i])
         )
-        # extinction coefficient in direction of sun per
-        ksli = chi_s / cos_tts  # leaf angle
-        koli = chi_o / cos_tto  # observer angle
-        # area scattering coefficient fractions
-        sobli = frho * np.pi / (cos_tts * cos_tto)
-        sofli = ftau * np.pi / (cos_tts * cos_tto)
-        bfli = cos_ttli ** 2
-
-        # integration over angles using dot product
-        k = ksli.T.dot(lidf)
-        K = koli.T.dot(lidf)
-        bf = bfli.T.dot(lidf)
-        sob = sobli.T.dot(lidf)
-        sof = sofli.T.dot(lidf)
-
-        # geometric factors for use with rho and tau
-        sdb = 0.5 * (k + bf)  # specular to diffuse backward scattering
-        sdf = 0.5 * (k - bf)  # specular to diffuse forward scattering
-        ddb = 0.5 * (1 + bf)  # diffuse to diffuse backward scattering
-        ddf = 0.5 * (1 - bf)  # diffuse to diffuse forward scattering
-        dob = 0.5 * (K + bf)  # diffuse to directional backward scattering
-        dof = 0.5 * (K - bf)  # diffuse to directional forward scattering
-
-        # Probabilites
-        Ps = np.exp(k * XL * LAI)  # of viewing a leaf in solar direction
-        Po = np.exp(K * XL * LAI)  # of viewing a leaf in observation direction
-
-        if LAI > 0:
-            Ps[0:nl] = Ps[0:nl] * (1 - np.exp(-k * LAI * dx)) / (k * LAI * dx)
-            Po[0:nl] = Po[0:nl] * (1 - np.exp(-k * LAI * dx)) / (k * LAI * dx)
-
-        for j in range(len(XL)):
-            Pso[j, :] = (
-                integrate.quad(Psofunction, XL[j] - dx, XL[j], args=(K, k, LAI, q, dso))[0]
-                / dx
+        Po[0 : nl[i], i] = (
+            Po[0 : nl[i], i]
+            * (1 - np.exp(-k[i] * LAI[i] * dx[i]))
+            / (k[i] * LAI[i] * dx[i])
+        )
+    # TODO: use np.trapz or cupy.trapz
+    for j in range(XL.shape[0]):
+        for i in range(Pso.shape[1]):
+            Pso[j, i] = (
+                integrate.quad(
+                    Psofunction,
+                    XL[j] - dx[i],
+                    XL[j],
+                    args=(K[i], k[i], LAI[i], q[i], dso[i]),
+                )[0]
+                / dx[i]
             )
 
-        # NOTE: there are two lines in the original script here that deal with
-        # rounding errors. I have excluded them. If this becomes a problem see
-        # lines 115 / 116 in SAILH.m
+    # NOTE: there are two lines in the original script here that deal with
+    # rounding errors. I have excluded them. If this becomes a problem see
+    # lines 115 / 116 in SAILH.m
 
-        # scattering coefficients for
-        sigb = ddb * rho + ddf * tau  # diffuse backscatter incidence
-        sigf = ddf * rho + ddb * tau  # forward incidence
-        sb = sdb * rho + sdf * tau  # specular backscatter incidence
-        sf = sdf * rho + sdb * tau  # specular forward incidence
-        vb = dob * rho + dof * tau  # directional backscatter diffuse
-        vf = dof * rho + dob * tau  # directional forward scatter diffuse
-        w = sob * rho + sof * tau  # bidirectional scattering
-        a = 1 - sigf  # attenuation
-        m = np.sqrt(a ** 2 - sigb ** 2)
-        rinf = (a - m) / sigb
-        rinf2 = rinf * rinf
+    # scattering coefficients for
+    sigb = ddb * rho + ddf * tau  # diffuse backscatter incidence
+    sigf = ddf * rho + ddb * tau  # forward incidence
+    sb = sdb * rho + sdf * tau  # specular backscatter incidence
+    sf = sdf * rho + sdb * tau  # specular forward incidence
+    vb = dob * rho + dof * tau  # directional backscatter diffuse
+    vf = dof * rho + dob * tau  # directional forward scatter diffuse
+    w = sob * rho + sof * tau  # bidirectional scattering
+    a = 1 - sigf  # attenuation
+    m = np.sqrt(a ** 2 - sigb ** 2)
+    rinf = (a - m) / sigb
+    rinf2 = rinf * rinf
 
-        # direct solar radiation
-        J1k = calcJ1(-1, m, k, LAI)
-        J2k = calcJ2(0, m, k, LAI)
-        J1K = calcJ1(-1, m, K, LAI)
-        J2K = calcJ2(0, m, K, LAI)
 
-        e1 = np.exp(-m * LAI)
-        e2 = e1 ** 2
-        re = rinf * e1
+    # direct solar radiation
+    J1k = calcJ1(-1, m, k, LAI)
+    J2k = calcJ2(0, m, k, LAI)
+    J1K = calcJ1(-1, m, K, LAI)
+    J2K = calcJ2(0, m, K, LAI)
 
-        denom = 1 - rinf2 ** 2
+    e1 = np.exp(-m * LAI)
+    e2 = e1 ** 2
+    re = rinf * e1
 
-        s1 = sf + rinf * sb
-        s2 = sf * rinf + sb
-        v1 = vf + rinf * vb
-        v2 = vf * rinf + vb
-        Pss = s1 * J1k
-        Qss = s2 * J2k
-        Poo = v1 * J1K
-        Qoo = v2 * J2K
+    denom = 1 - rinf2 ** 2
 
-        tau_ss = np.exp(-k * LAI)
-        tau_oo = np.exp(-K * LAI)
+    s1 = sf + rinf * sb
+    s2 = sf * rinf + sb
+    v1 = vf + rinf * vb
+    v2 = vf * rinf + vb
+    Pss = s1 * J1k
+    Qss = s2 * J2k
+    Poo = v1 * J1K
+    Qoo = v2 * J2K
 
-        Z = (1 - tau_ss * tau_oo) / (K + k)
+    tau_ss = np.exp(-k * LAI)
+    tau_oo = np.exp(-K * LAI)
 
-        tau_dd = (1 - rinf2) * e1 / denom
-        rho_dd = rinf * (1 - e2) / denom
-        tau_sd = (Pss - re * Qss) / denom
-        tau_do = (Poo - re * Qoo) / denom
-        rho_sd = (Qss - re * Pss) / denom
-        rho_do = (Qoo - re * Poo) / denom
+    Z = (1 - tau_ss * tau_oo) / (K + k)
 
-        T1 = v2 * s1 * (Z - J1k * tau_oo) / (K + m) + v1 * s2 * (Z - J1K * tau_ss) / (k + m)
-        T2 = -(Qoo * rho_sd + Poo * tau_sd) * rinf
-        rho_sod = (T1 + T2) / (1 - rinf2)
+    tau_dd = (1 - rinf2) * e1 / denom
+    rho_dd = rinf * (1 - e2) / denom
+    tau_sd = (Pss - re * Qss) / denom
+    tau_do = (Poo - re * Qoo) / denom
+    rho_sd = (Qss - re * Pss) / denom
+    rho_do = (Qoo - re * Poo) / denom
 
-        rho_sos = w * np.sum(Pso[0:nl]) * iLAI
-        rho_so = rho_sod + rho_sos
 
-        Pso2w = Pso[nl]
+    T1 = v2 * s1 * (Z - J1k * tau_oo) / (K + m) + v1 * s2 * (Z - J1K * tau_ss) / (k + m)
+    T2 = -(Qoo * rho_sd + Poo * tau_sd) * rinf
+    rho_sod = (T1 + T2) / (1 - rinf2)
 
-        # Sail analytical reflectances
-        denom = 1 - rs * rho_dd
+    rho_sos = np.zeros(w.shape) 
+    for i in range(w.shape[1]):
+        rho_sos[:, i] = w[:, i] * np.sum(Pso[0:nl[i], i]) * iLAI[i]
+    rho_so = rho_sod + rho_sos
 
-        rso = (
-            rho_so
-            + rs * Pso2w
-            + ((tau_sd + tau_ss * rs * rho_dd) * tau_oo + (tau_sd + tau_ss) * tau_do)
-            * rs
-            / denom
-        )
-        rdo = rho_do + (tau_oo + tau_do) * rs * tau_dd / denom
-        rsd = rho_sd + (tau_ss + tau_sd) * rs * tau_dd / denom
-        rdd = rho_dd + tau_dd * rs * tau_dd / denom
+    Pso2w = np.zeros(nl.shape)
+    for i in range(Pso2w.shape[0]):
+        Pso2w[i] = Pso[nl[i], i]
 
-        return rso, rdo, rsd, rdd
+    # Sail analytical reflectances
+    denom = 1 - rs * rho_dd
+
+    rso = (
+        rho_so
+        + rs * Pso2w
+        + ((tau_sd + tau_ss * rs * rho_dd) * tau_oo + (tau_sd + tau_ss) * tau_do)
+        * rs
+        / denom
+    )
+    rdo = rho_do + (tau_oo + tau_do) * rs * tau_dd / denom
+    rsd = rho_sd + (tau_ss + tau_sd) * rs * tau_dd / denom
+    rdd = rho_dd + tau_dd * rs * tau_dd / denom
+
+    return rso, rdo, rsd, rdd
 
 
 @numba.njit
 def calcJ2(x, m, k, LAI):
     # For getting numerically stable solutions
-    J2 = (np.exp(k * LAI * x) - np.exp(-k * LAI) * np.exp(-m * LAI * (1 + x))) / (
-        k + m
-    )
+    J2 = (np.exp(k * LAI * x) - np.exp(-k * LAI) * np.exp(-m * LAI * (1 + x))) / (k + m)
     return J2
 
 
 @numba.njit
 def calcJ1(x, m, k, LAI):
     # For getting numerically stable solutions
-    J1 = np.zeros((len(m), 1))
+    J1 = np.zeros(m.shape)
     sing = np.abs((m - k) * LAI) < 1e-6
 
-    CS = np.where(sing)[0]
-    CN = np.where(~sing)[0]
 
-    J1[CN, 0] = (np.exp(m[CN, 0] * LAI * x) - np.exp(k * LAI * x)) / (k - m[CN, 0])
-    J1[CS, 0] = (
-        -0.5
-        * (np.exp(m[CS, 0] * LAI * x) + np.exp(k * LAI * x))
-        * LAI
-        * x
-        * (1 - 1 / 12 * (k - m[CS, 0]) ** 2 * LAI ** 2)
-    )
+    CS = np.argwhere(sing)
+    CN = np.argwhere(~sing)
+
+    for i, j in CN:
+        J1[i, j] = (np.exp(m[i, j] * LAI[j] * x) - np.exp(k[j] * LAI[j] * x)) / (k[j] - m[i, j])
+    for i, j in CS:
+        J1[i, j] = (
+            -0.5
+            * (np.exp(m[i, j] * LAI[j] * x) + np.exp(k[j] * LAI[j] * x))
+            * LAI[j]
+            * x
+            * (1 - 1 / 12 * (k[j] - m[i, j]) ** 2 * LAI[j] ** 2)
+        )
     return J1
-
 
 
 class CanopyReflectances:
@@ -532,66 +578,66 @@ XL = np.array(
 )
 Pso = np.array(
     [
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
-        [0.],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
+        [0.0],
     ]
 )
