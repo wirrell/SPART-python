@@ -8,13 +8,24 @@ SAILH model outlined in:
         - W Verhoef 1998
 """
 import numpy as np
+import cupy as cp
 import numba
 import scipy.integrate as integrate
-from numba import cuda
+from SPART.helper_functions import cupy_trapz
 
 
 def SAILH(
-    soil_refl, leaf_refl, leaf_tran, nl, LAI, lidf, sol_angle, obs_angle, rel_angle, q
+    soil_refl,
+    leaf_refl,
+    leaf_tran,
+    nl,
+    LAI,
+    lidf,
+    sol_angle,
+    obs_angle,
+    rel_angle,
+    q,
+    use_CUDA=False,
 ):
     """
     Run the SAILH model.
@@ -43,6 +54,8 @@ def SAILH(
         relative azimuth angle
     q : np.array or float
         canopy hotspot parameter
+    use_CUDA : bool
+        If true, use GPU and CuPy
 
     Returns
     -------
@@ -81,18 +94,205 @@ def SAILH(
     # Resized pre-defined arrays for purpose
     global XL
     global Pso
+    global LITAB
     Pso_sized = np.concatenate([Pso for _ in range(rho.shape[1])], axis=1)
 
     # run sailh computation
-    rso, rdo, rsd, rdd = _SAILH_computation(
-        nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, Pso_sized
-    )
+    if use_CUDA:
+        rso, rdo, rsd, rdd = _SAILH_computation_CUDA(
+            nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, LITAB, Pso_sized
+        )
+    else:
+        rso, rdo, rsd, rdd = _SAILH_computation(
+            nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, LITAB, Pso_sized
+        )
 
     return rso, rdo, rsd, rdd
 
 
-@numba.jit
-def _SAILH_computation(nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, Pso):
+def _SAILH_computation_CUDA(
+    nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, LITAB, Pso
+):
+
+    with cp.cuda.Device(0):
+
+        # Move constituent arrays to device
+        with nvtx.annotate('SAILH - Transfer arrays to GPU'):
+            nl = cp.asarray(nl)
+            LAI = cp.asarray(LAI)
+            lidf = cp.asarray(lidf)
+            rho = cp.asarray(rho)
+            tau = cp.asarray(tau)
+            rs = cp.asarray(rs)
+            tts = cp.asarray(tts)
+            tto = cp.asarray(tto)
+            rel_angle = cp.asarray(rel_angle)
+            q = cp.asarray(q)
+            XL = cp.asarray(XL)
+            Pso = cp.asarray(Pso)
+            LITAB = cp.asarray(LITAB)
+            dx = cp.asarray(1 / nl)
+            iLAI = cp.asarray(LAI * dx)
+
+        with nvtx.annotate('SAILH - First logic section'):
+            # Set geometric quantities
+            # ensures symmetry at 90 and 270 deg
+            psi = cp.abs(rel_angle - 360 * cp.round(rel_angle / 360))
+            psi_rad = cp.deg2rad(psi)
+            tts_rad = cp.deg2rad(tts)
+            tto_rad = cp.deg2rad(tto)
+            LITAB_rad = cp.deg2rad(LITAB)
+
+            sin_tts = cp.sin(tts_rad)
+            cos_tts = cp.cos(tts_rad)
+            tan_tts = cp.tan(tts_rad)
+
+            sin_tto = cp.sin(tto_rad)
+            cos_tto = cp.cos(tto_rad)
+            tan_tto = cp.tan(tto_rad)
+
+            sin_ttli = cp.sin(LITAB_rad)
+            cos_ttli = cp.cos(LITAB_rad)
+
+            dso = cp.sqrt(
+                tan_tts ** 2 + tan_tto ** 2 - 2 * tan_tts * tan_tto * cp.cos(psi_rad)
+            )
+
+            # geometric factors associated with extinction and scattering
+            chi_s, chi_o, frho, ftau = _volscatt_CUDA(
+                sin_tts, cos_tts, sin_tto, cos_tto, psi_rad, sin_ttli, cos_ttli
+            )
+            # extinction coefficient in direction of sun per
+            ksli = chi_s / cos_tts  # leaf angle
+            koli = chi_o / cos_tto  # observer angle
+            # area scattering coefficient fractions
+            sobli = frho * np.pi / (cos_tts * cos_tto)
+            sofli = ftau * np.pi / (cos_tts * cos_tto)
+            bfli = cos_ttli ** 2
+
+            # integration over angles using dot product
+            k = cp.diagonal(ksli.T.dot(lidf))
+            K = cp.diagonal(koli.T.dot(lidf))
+            bf = cp.diagonal(bfli.T.dot(lidf))
+            sob = cp.diagonal(sobli.T.dot(lidf))
+            sof = cp.diagonal(sofli.T.dot(lidf))
+
+            # geometric factors for use with rho and tau
+            sdb = 0.5 * (k + bf)  # specular to diffuse backward scattering
+            sdf = 0.5 * (k - bf)  # specular to diffuse forward scattering
+            ddb = 0.5 * (1 + bf)  # diffuse to diffuse backward scattering
+            ddf = 0.5 * (1 - bf)  # diffuse to diffuse forward scattering
+            dob = 0.5 * (K + bf)  # diffuse to directional backward scattering
+            dof = 0.5 * (K - bf)  # diffuse to directional forward scattering
+
+            # Probabilites
+            Ps = cp.exp(k * XL * LAI)  # of viewing a leaf in solar direction
+            Po = cp.exp(K * XL * LAI)  # of viewing a leaf in observation direction
+
+            for i in cp.arange(Ps.shape[1]):
+                Ps[0 : nl[i], i] = (
+                    Ps[0 : nl[i], i]
+                    * (1 - cp.exp(-k[i] * LAI[i] * dx[i]))
+                    / (k[i] * LAI[i] * dx[i])
+                )
+                Po[0 : nl[i], i] = (
+                    Po[0 : nl[i], i]
+                    * (1 - cp.exp(-k[i] * LAI[i] * dx[i]))
+                    / (k[i] * LAI[i] * dx[i])
+                )
+        with nvtx.annotate('SAILH integration'):
+            for j in range(XL.shape[0]):
+                for i in range(Pso.shape[1]):
+                    Pso[j, i] = (
+                        integrate_psofunction_CUDA(
+                            XL[j] - dx[i], XL[j], K[i], k[i], LAI[i], q[i], dso[i]
+                        )
+                        / dx[i]
+                    )
+
+            # NOTE: there are two lines in the original script here that deal with
+            # rounding errors. I have excluded them. If this becomes a problem see
+            # lines 115 / 116 in SAILH.m
+
+            # scattering coefficients for
+            sigb = ddb * rho + ddf * tau  # diffuse backscatter incidence
+            sigf = ddf * rho + ddb * tau  # forward incidence
+            sb = sdb * rho + sdf * tau  # specular backscatter incidence
+            sf = sdf * rho + sdb * tau  # specular forward incidence
+            vb = dob * rho + dof * tau  # directional backscatter diffuse
+            vf = dof * rho + dob * tau  # directional forward scatter diffuse
+            w = sob * rho + sof * tau  # bidirectional scattering
+            a = 1 - sigf  # attenuation
+            m = cp.sqrt(a ** 2 - sigb ** 2)
+            rinf = (a - m) / sigb
+            rinf2 = rinf * rinf
+
+            # direct solar radiation
+            J1k = calcJ1_CUDA(-1, m, k, LAI)
+            J2k = calcJ2_CUDA(0, m, k, LAI)
+            J1K = calcJ1_CUDA(-1, m, K, LAI)
+            J2K = calcJ2_CUDA(0, m, K, LAI)
+
+            e1 = cp.exp(-m * LAI)
+            e2 = e1 ** 2
+            re = rinf * e1
+
+            denom = 1 - rinf2 ** 2
+
+            s1 = sf + rinf * sb
+            s2 = sf * rinf + sb
+            v1 = vf + rinf * vb
+            v2 = vf * rinf + vb
+            Pss = s1 * J1k
+            Qss = s2 * J2k
+            Poo = v1 * J1K
+            Qoo = v2 * J2K
+
+            tau_ss = cp.exp(-k * LAI)
+            tau_oo = cp.exp(-K * LAI)
+
+            Z = (1 - tau_ss * tau_oo) / (K + k)
+
+            tau_dd = (1 - rinf2) * e1 / denom
+            rho_dd = rinf * (1 - e2) / denom
+            tau_sd = (Pss - re * Qss) / denom
+            tau_do = (Poo - re * Qoo) / denom
+            rho_sd = (Qss - re * Pss) / denom
+            rho_do = (Qoo - re * Poo) / denom
+
+            T1 = v2 * s1 * (Z - J1k * tau_oo) / (K + m) + v1 * s2 * (Z - J1K * tau_ss) / (k + m)
+            T2 = -(Qoo * rho_sd + Poo * tau_sd) * rinf
+            rho_sod = (T1 + T2) / (1 - rinf2)
+
+            rho_sos = cp.zeros(w.shape)
+            for i in range(w.shape[1]):
+                rho_sos[:, i] = w[:, i] * cp.sum(Pso[0 : nl[i], i]) * iLAI[i]
+            rho_so = rho_sod + rho_sos
+
+            Pso2w = cp.zeros(nl.shape)
+            for i in range(Pso2w.shape[0]):
+                Pso2w[i] = Pso[nl[i], i]
+
+            # Sail analytical reflectances
+            denom = 1 - rs * rho_dd
+
+        rso = (
+            rho_so
+            + rs * Pso2w
+            + ((tau_sd + tau_ss * rs * rho_dd) * tau_oo + (tau_sd + tau_ss) * tau_do)
+            * rs
+            / denom
+        )
+        rdo = rho_do + (tau_oo + tau_do) * rs * tau_dd / denom
+        rsd = rho_sd + (tau_ss + tau_sd) * rs * tau_dd / denom
+        rdd = rho_dd + tau_dd * rs * tau_dd / denom
+
+    return rso.get(), rdo.get(), rsd.get(), rdd.get()
+
+
+def _SAILH_computation(
+    nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, LITAB, Pso
+):
     dx = 1 / nl
     iLAI = LAI * dx
     deg2rad = np.pi / 180
@@ -157,16 +357,18 @@ def _SAILH_computation(nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, 
             / (k[i] * LAI[i] * dx[i])
         )
 
-    # TODO: use np.trapz or cupy.trapz
+    sci = []
+
+    my = []
+
     for j in range(XL.shape[0]):
         for i in range(Pso.shape[1]):
             Pso[j, i] = (
-                integrate.quad(
-                    Psofunction,
+                integrate_psofunction(
                     XL[j] - dx[i],
                     XL[j],
-                    args=(K[i], k[i], LAI[i], q[i], dso[i]),
-                )[0]
+                    K[i], k[i], LAI[i], q[i], dso[i]
+                )
                 / dx[i]
             )
 
@@ -186,7 +388,6 @@ def _SAILH_computation(nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, 
     m = np.sqrt(a ** 2 - sigb ** 2)
     rinf = (a - m) / sigb
     rinf2 = rinf * rinf
-
 
     # direct solar radiation
     J1k = calcJ1(-1, m, k, LAI)
@@ -221,14 +422,13 @@ def _SAILH_computation(nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, 
     rho_sd = (Qss - re * Pss) / denom
     rho_do = (Qoo - re * Poo) / denom
 
-
     T1 = v2 * s1 * (Z - J1k * tau_oo) / (K + m) + v1 * s2 * (Z - J1K * tau_ss) / (k + m)
     T2 = -(Qoo * rho_sd + Poo * tau_sd) * rinf
     rho_sod = (T1 + T2) / (1 - rinf2)
 
-    rho_sos = np.zeros(w.shape) 
+    rho_sos = np.zeros(w.shape)
     for i in range(w.shape[1]):
-        rho_sos[:, i] = w[:, i] * np.sum(Pso[0:nl[i], i]) * iLAI[i]
+        rho_sos[:, i] = w[:, i] * np.sum(Pso[0 : nl[i], i]) * iLAI[i]
     rho_so = rho_sod + rho_sos
 
     Pso2w = np.zeros(nl.shape)
@@ -252,10 +452,53 @@ def _SAILH_computation(nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, 
     return rso, rdo, rsd, rdd
 
 
+def integrate_psofunction(lower_limit, upper_limit, *args):
+    if upper_limit < lower_limit:
+        upper_limit = temp
+        upper_limit = lower_limit
+        lower_limit = temp 
+
+    granularity = 100000
+    dx = (upper_limit - lower_limit) / granularity
+
+    y_values = np.zeros(granularity + 1)
+
+    x = lower_limit
+    i = 0
+    while x <= upper_limit:
+        y_values[i] = Psofunction(x, *args)
+        x = x + dx
+        i = i + 1
+
+    return np.trapz(y_values, dx=dx)
+
+
+def integrate_psofunction_CUDA(lower_limit, upper_limit, *args):
+    granularity = 1000
+    dx = (upper_limit - lower_limit) / granularity
+
+    y_values = cp.zeros(granularity + 1)
+
+    x = lower_limit
+    i = 0
+    while x <= upper_limit:
+        y_values[i] = Psofunction_CUDA(x, *args)
+        x = x + dx
+        i = i + 1
+
+    return cupy_trapz(y_values, dx=dx)
+
+
 @numba.njit
 def calcJ2(x, m, k, LAI):
     # For getting numerically stable solutions
     J2 = (np.exp(k * LAI * x) - np.exp(-k * LAI) * np.exp(-m * LAI * (1 + x))) / (k + m)
+    return J2
+
+
+def calcJ2_CUDA(x, m, k, LAI):
+    # For getting numerically stable solutions
+    J2 = (cp.exp(k * LAI * x) - cp.exp(-k * LAI) * cp.exp(-m * LAI * (1 + x))) / (k + m)
     return J2
 
 
@@ -265,16 +508,40 @@ def calcJ1(x, m, k, LAI):
     J1 = np.zeros(m.shape)
     sing = np.abs((m - k) * LAI) < 1e-6
 
-
     CS = np.argwhere(sing)
     CN = np.argwhere(~sing)
 
     for i, j in CN:
-        J1[i, j] = (np.exp(m[i, j] * LAI[j] * x) - np.exp(k[j] * LAI[j] * x)) / (k[j] - m[i, j])
+        J1[i, j] = (np.exp(m[i, j] * LAI[j] * x) - np.exp(k[j] * LAI[j] * x)) / (
+            k[j] - m[i, j]
+        )
     for i, j in CS:
         J1[i, j] = (
             -0.5
             * (np.exp(m[i, j] * LAI[j] * x) + np.exp(k[j] * LAI[j] * x))
+            * LAI[j]
+            * x
+            * (1 - 1 / 12 * (k[j] - m[i, j]) ** 2 * LAI[j] ** 2)
+        )
+    return J1
+
+
+def calcJ1_CUDA(x, m, k, LAI):
+    # For getting numerically stable solutions
+    J1 = cp.zeros(m.shape)
+    sing = cp.abs((m - k) * LAI) < 1e-6
+
+    CS = cp.argwhere(sing)
+    CN = cp.argwhere(~sing)
+
+    for i, j in CN:
+        J1[i, j] = (cp.exp(m[i, j] * LAI[j] * x) - cp.exp(k[j] * LAI[j] * x)) / (
+            k[j] - m[i, j]
+        )
+    for i, j in CS:
+        J1[i, j] = (
+            -0.5
+            * (cp.exp(m[i, j] * LAI[j] * x) + cp.exp(k[j] * LAI[j] * x))
             * LAI[j]
             * x
             * (1 - 1 / 12 * (k[j] - m[i, j]) ** 2 * LAI[j] ** 2)
@@ -459,6 +726,19 @@ def Psofunction(x, K, k, LAI, q, dso):
     return pso
 
 
+def Psofunction_CUDA(x, K, k, LAI, q, dso):
+    # From APPENDIX IV of original matlab code
+    if dso != 0:
+        alpha = (dso / q) * 2 / (k + K)
+        pso = cp.exp(
+            (K + k) * LAI * x + cp.sqrt(K * k) * LAI / alpha * (1 - cp.exp(x * alpha))
+        )
+    else:
+        pso = cp.exp((K + k) * LAI * x - cp.sqrt(K * k) * LAI * x)
+
+    return pso
+
+
 @numba.njit
 def _volscatt(sin_tts, cos_tts, sin_tto, cos_tto, psi_rad, sin_ttli, cos_ttli):
     # Calculate geometric factors. See SAILH.m code.
@@ -504,6 +784,52 @@ def _volscatt(sin_tts, cos_tts, sin_tto, cos_tto, psi_rad, sin_ttli, cos_ttli):
     zeros = np.zeros((nli, 1))
     frho = np.maximum(zeros, frho)
     ftau = np.maximum(zeros, ftau)
+
+    return chi_s, chi_o, frho, ftau
+
+
+def _volscatt_CUDA(sin_tts, cos_tts, sin_tto, cos_tto, psi_rad, sin_ttli, cos_ttli):
+    # Calculate geometric factors. See SAILH.m code.
+    # See original matlab code. Adapted here to save recalculating trigs.
+    psi_rad = psi_rad * cp.ones(cos_ttli.shape)
+    cos_psi = cp.cos(psi_rad)
+
+    Cs = cos_ttli * cos_tts
+    Ss = sin_ttli * sin_tts
+
+    Co = cos_ttli * cos_tto
+    So = sin_ttli * sin_tto
+
+    As = cp.maximum(Ss, Cs)
+    Ao = cp.maximum(So, Co)
+
+    bts = cp.arccos(-Cs / As)
+    bto = cp.arccos(-Co / Ao)
+
+    chi_o = 2 / cp.pi * ((bto - cp.pi / 2) * Co + cp.sin(bto) * So)
+    chi_s = 2 / cp.pi * ((bts - cp.pi / 2) * Cs + cp.sin(bts) * Ss)
+
+    delta1 = cp.abs(bts - bto)
+    delta2 = cp.pi - cp.abs(bts + bto - cp.pi)
+
+    Tot = psi_rad + delta1 + delta2
+
+    bt1 = cp.minimum(psi_rad, delta1)
+    bt3 = cp.maximum(psi_rad, delta2)
+    bt2 = Tot - bt1 - bt3
+
+    T1 = 2 * Cs * Co + Ss * So * cos_psi
+    T2 = cp.sin(bt2) * (2 * As * Ao + Ss * So * cp.cos(bt1) * cp.cos(bt3))
+
+    Jmin = bt2 * T1 - T2
+    Jplus = (cp.pi - bt2) * T1 + T2
+
+    frho = Jplus / (2 * cp.pi ** 2)
+    ftau = -Jmin / (2 * cp.pi ** 2)
+
+    zeros = cp.zeros(cos_ttli.shape)
+    frho = cp.maximum(zeros, frho)
+    ftau = cp.maximum(zeros, ftau)
 
     return chi_s, chi_o, frho, ftau
 
