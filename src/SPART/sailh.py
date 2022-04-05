@@ -14,7 +14,6 @@ import numba
 import torch
 import scipy.integrate as integrate
 from torchquad import MonteCarlo, enable_cuda
-from SPART.helper_functions import cupy_trapz
 
 
 def SAILH(
