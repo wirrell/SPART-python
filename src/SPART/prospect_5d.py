@@ -15,6 +15,7 @@ import numpy as np
 import numba
 import scipy.integrate as integrate
 from dataclasses import dataclass
+import cupy as cp
 
 
 @dataclass
@@ -110,9 +111,9 @@ class LeafOptics:
         / transmittance in the spectral range, 400 to 2400 nm
     """
 
-    refl: np.ndarray
-    tran: np.ndarray
-    kChlrel: np.ndarray
+    refl: cp.ndarray
+    tran: cp.ndarray
+    kChlrel: cp.ndarray
 
 
 # mangling __PROSPECT_5D_ - runs as an internal function
@@ -191,7 +192,7 @@ def PROSPECT_5D(leafbio, optical_params):
 
     t1, j = make_j_t1(Kall)
 
-    t2 = Kall ** 2 * np.vectorize(expint)(Kall)[0]
+    t2 = Kall ** 2 * cp.vectorize(expint)(Kall)[0]
 
     tau = make_tau(t1, t2, j)
 
@@ -234,7 +235,7 @@ def _PROSPECT_5D(t1, j, t2, tau, Kall, kChlrel, t_alph, t12, nr, N):
         # Stokes equations to compute properties of next N-1 layers (N real)
 
         # Normal case
-        D = np.sqrt((1 + r + t) * (1 + r - t) * (1 - r + t) * (1 - r - t))
+        D = cp.sqrt((1 + r + t) * (1 + r - t) * (1 - r + t) * (1 - r - t))
         rq = r ** 2
         tq = t ** 2
         a = (1 + rq - tq + D) / (2 * r)
@@ -248,7 +249,7 @@ def _PROSPECT_5D(t1, j, t2, tau, Kall, kChlrel, t_alph, t12, nr, N):
         Tsub = bNm1 * (a2 - 1) / denom
 
         # Case of zero absorption
-        j = np.where(r + t >= 1)[0]
+        j = cp.where(r + t >= 1)[0]
         Tsub[j] = t[j] / (t[j] + (1 - t[j]) * (N - 1))
         Rsub[j] = 1 - Tsub[j]
 
@@ -267,9 +268,9 @@ def expint(x):
     # which evaluates slightly different (10 decimal places) than matlab
     # Exponential integral from expint command in matlab
     def intergrand(t):
-        return np.exp(-t) / t
+        return cp.exp(-t) / t
 
-    return integrate.quad(intergrand, x, np.inf)
+    return integrate.quad(intergrand, x, cp.inf)
 
 
 @numba.njit
@@ -293,21 +294,21 @@ def make_Kall(
 # Non-conservative scattering (normal case)
 @numba.njit
 def make_j_t1(Kall):
-    j = np.where(Kall > 0)[0]
-    t1 = (1 - Kall) * np.exp(-Kall)
+    j = cp.where(Kall > 0)[0]
+    t1 = (1 - Kall) * cp.exp(-Kall)
     return t1, j
 
 
 @numba.njit
 def make_tau(t1, t2, j):
-    tau = np.ones((len(t1), 1))
+    tau = cp.ones((len(t1), 1))
     tau[j] = t1[j] + t2[j]
     return tau
 
 
 @numba.njit
 def make_KChlrel(t1, Cab, Kab, j, N, Kall):
-    kChlrel = np.zeros((len(t1), 1))
+    kChlrel = cp.zeros((len(t1), 1))
     kChlrel[j] = Cab * Kab[j] / (Kall[j] * N)
     return kChlrel
 
@@ -340,17 +341,17 @@ def calculate_tav(alpha, nr):
         between two dielectrics - Stern
     """
 
-    rd = np.pi / 180
+    rd = cp.pi / 180
     n2 = nr ** 2
     n_p = n2 + 1
     nm = n2 - 1
     a = (nr + 1) * (nr + 1) / 2
     k = -(n2 - 1) * (n2 - 1) / 4
-    sa = np.full((2001, 1), np.sin(alpha * rd))
+    sa = cp.full((2001, 1), cp.sin(alpha * rd))
 
-    b1 = np.zeros((2001, 1))
+    b1 = cp.zeros((2001, 1))
     if alpha != 90:
-        b1 = np.sqrt((sa ** 2 - n_p / 2) * (sa ** 2 - n_p / 2) + k)
+        b1 = cp.sqrt((sa ** 2 - n_p / 2) * (sa ** 2 - n_p / 2) + k)
 
     b2 = sa ** 2 - n_p / 2
     b = b1 - b2
@@ -359,13 +360,13 @@ def calculate_tav(alpha, nr):
     ts = (k ** 2 / (6 * b3) + k / b - b / 2) - (k ** 2 / (6 * a3) + k / a - a / 2)
 
     tp1 = -2 * n2 * (b - a) / (n_p ** 2)
-    tp2 = -2 * n2 * n_p * np.log(b / a) / (nm ** 2)
+    tp2 = -2 * n2 * n_p * cp.log(b / a) / (nm ** 2)
     tp3 = n2 * (1 / b - 1 / a) / 2
     tp4 = (
         16
         * n2 ** 2
         * (n2 ** 2 + 1)
-        * np.log((2 * n_p * b - nm ** 2) / (2 * n_p * a - nm ** 2))
+        * cp.log((2 * n_p * b - nm ** 2) / (2 * n_p * a - nm ** 2))
         / (n_p ** 3 * nm ** 2)
     )
     tp5 = (
