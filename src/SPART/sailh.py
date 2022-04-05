@@ -13,7 +13,9 @@ import scipy.integrate as integrate
 from numba import cuda
 
 
-def SAILH(soil_refl, leaf_refl, leaf_tran, nl, LAI, lidf, sol_angle, obs_angle, rel_angle, q):
+def SAILH(
+    soil_refl, leaf_refl, leaf_tran, nl, LAI, lidf, sol_angle, obs_angle, rel_angle, q
+):
     """
     Run the SAILH model.
 
@@ -57,17 +59,31 @@ def SAILH(soil_refl, leaf_refl, leaf_tran, nl, LAI, lidf, sol_angle, obs_angle, 
             "\n the neccessary thermal wavelengths."
         )
 
-    if not (LAI > 0).any():
-        raise ValueError('Cannot run SAILH with LAI of 0.')
+    if isinstance(LAI, np.ndarray):
+        if not (LAI > 0).any():
+            raise ValueError("Cannot run SAILH with LAI of 0.")
+    else:
+        if not LAI > 0:
+            raise ValueError("Cannot run SAILH with LAI of 0.")
+
     rho = leaf_refl
     tau = leaf_tran
     rs = soil_refl
-    tts = sol_angle
-    tto = obs_angle
-    rel_angle = rel_angle
+
+    # Make floats 1d arrays to smooth out computation logic
+    nl = np.atleast_1d(nl)
+    tts = np.atleast_1d(sol_angle)
+    tto = np.atleast_1d(obs_angle)
+    rel_angle = np.atleast_1d(rel_angle)
+    LAI = np.atleast_1d(LAI)
+    q = np.atleast_1d(q)
+
+    # Resized pre-defined arrays for purpose
     global XL
     global Pso
     Pso_sized = np.concatenate([Pso for _ in range(rho.shape[1])], axis=1)
+
+    # run sailh computation
     rso, rdo, rsd, rdd = _SAILH_computation(
         nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, Pso_sized
     )
@@ -110,7 +126,6 @@ def _SAILH_computation(nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, 
     sofli = ftau * np.pi / (cos_tts * cos_tto)
     bfli = cos_ttli ** 2
 
-
     # integration over angles using dot product
     k = np.diagonal(ksli.T.dot(lidf))
     K = np.diagonal(koli.T.dot(lidf))
@@ -126,30 +141,34 @@ def _SAILH_computation(nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, 
     dob = 0.5 * (K + bf)  # diffuse to directional backward scattering
     dof = 0.5 * (K - bf)  # diffuse to directional forward scattering
 
-
     # Probabilites
     Ps = np.exp(k * XL * LAI)  # of viewing a leaf in solar direction
     Po = np.exp(K * XL * LAI)  # of viewing a leaf in observation direction
 
-
-    if Ps.shape[1] == 1:
-        Ps[0:nl] = Ps[0:nl] * (1 - np.exp(-k * LAI * dx)) / (k * LAI * dx)
-        Po[0:nl] = Po[0:nl] * (1 - np.exp(-k * LAI * dx)) / (k * LAI * dx)
-    else:
-        for i in np.arange(Ps.shape[1]):
-            Ps[0:nl[i], i] = Ps[0:nl[i], i] * (1 - np.exp(-k[i] * LAI[i] * dx[i])) / (k[i] * LAI[i] * dx[i])
-            Po[0:nl[i], i] = Po[0:nl[i], i] * (1 - np.exp(-k[i] * LAI[i] * dx[i])) / (k[i] * LAI[i] * dx[i])
-
-
-    # TODO: continue here, work out how to generalize the Pso expression to multiple simulations
-    for j in range(XL.shape[0]):
-        Pso[j, :] = (
-            integrate.quad(Psofunction, XL[j] - dx, XL[j], args=(K, k, LAI, q, dso))[0]
-                / dx
+    for i in np.arange(Ps.shape[1]):
+        Ps[0 : nl[i], i] = (
+            Ps[0 : nl[i], i]
+            * (1 - np.exp(-k[i] * LAI[i] * dx[i]))
+            / (k[i] * LAI[i] * dx[i])
         )
-    print(Pso.shape)
-    return None, None, None, None
+        Po[0 : nl[i], i] = (
+            Po[0 : nl[i], i]
+            * (1 - np.exp(-k[i] * LAI[i] * dx[i]))
+            / (k[i] * LAI[i] * dx[i])
+        )
 
+    # TODO: use np.trapz or cupy.trapz
+    for j in range(XL.shape[0]):
+        for i in range(Pso.shape[1]):
+            Pso[j, i] = (
+                integrate.quad(
+                    Psofunction,
+                    XL[j] - dx[i],
+                    XL[j],
+                    args=(K[i], k[i], LAI[i], q[i], dso[i]),
+                )[0]
+                / dx[i]
+            )
 
     # NOTE: there are two lines in the original script here that deal with
     # rounding errors. I have excluded them. If this becomes a problem see
@@ -167,6 +186,7 @@ def _SAILH_computation(nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, 
     m = np.sqrt(a ** 2 - sigb ** 2)
     rinf = (a - m) / sigb
     rinf2 = rinf * rinf
+
 
     # direct solar radiation
     J1k = calcJ1(-1, m, k, LAI)
@@ -201,14 +221,19 @@ def _SAILH_computation(nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, 
     rho_sd = (Qss - re * Pss) / denom
     rho_do = (Qoo - re * Poo) / denom
 
+
     T1 = v2 * s1 * (Z - J1k * tau_oo) / (K + m) + v1 * s2 * (Z - J1K * tau_ss) / (k + m)
     T2 = -(Qoo * rho_sd + Poo * tau_sd) * rinf
     rho_sod = (T1 + T2) / (1 - rinf2)
 
-    rho_sos = w * np.sum(Pso[0:nl]) * iLAI
+    rho_sos = np.zeros(w.shape) 
+    for i in range(w.shape[1]):
+        rho_sos[:, i] = w[:, i] * np.sum(Pso[0:nl[i], i]) * iLAI[i]
     rho_so = rho_sod + rho_sos
 
-    Pso2w = Pso[nl]
+    Pso2w = np.zeros(nl.shape)
+    for i in range(Pso2w.shape[0]):
+        Pso2w[i] = Pso[nl[i], i]
 
     # Sail analytical reflectances
     denom = 1 - rs * rho_dd
@@ -237,20 +262,23 @@ def calcJ2(x, m, k, LAI):
 @numba.njit
 def calcJ1(x, m, k, LAI):
     # For getting numerically stable solutions
-    J1 = np.zeros((len(m), 1))
+    J1 = np.zeros(m.shape)
     sing = np.abs((m - k) * LAI) < 1e-6
 
-    CS = np.where(sing)[0]
-    CN = np.where(~sing)[0]
 
-    J1[CN, 0] = (np.exp(m[CN, 0] * LAI * x) - np.exp(k * LAI * x)) / (k - m[CN, 0])
-    J1[CS, 0] = (
-        -0.5
-        * (np.exp(m[CS, 0] * LAI * x) + np.exp(k * LAI * x))
-        * LAI
-        * x
-        * (1 - 1 / 12 * (k - m[CS, 0]) ** 2 * LAI ** 2)
-    )
+    CS = np.argwhere(sing)
+    CN = np.argwhere(~sing)
+
+    for i, j in CN:
+        J1[i, j] = (np.exp(m[i, j] * LAI[j] * x) - np.exp(k[j] * LAI[j] * x)) / (k[j] - m[i, j])
+    for i, j in CS:
+        J1[i, j] = (
+            -0.5
+            * (np.exp(m[i, j] * LAI[j] * x) + np.exp(k[j] * LAI[j] * x))
+            * LAI[j]
+            * x
+            * (1 - 1 / 12 * (k[j] - m[i, j]) ** 2 * LAI[j] ** 2)
+        )
     return J1
 
 

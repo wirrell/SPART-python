@@ -99,17 +99,11 @@ def test_SAILH_concurrent(
         np.array([angles.rel_angle] * concurrent_tests),
         np.array([canopy_structure.q] * concurrent_tests),
     )
-    return
-    print(rso.shape)
-    print(rdo.shape)
-    print(rsd.shape)
-    print(rdd.shape)
-    return
 
     # raises error if not equal
-    np.testing.assert_array_almost_equal(exp_rso, result.rso.flatten())
-    np.testing.assert_array_almost_equal(exp_rdo, result.rdo.flatten())
-    np.testing.assert_array_almost_equal(exp_rsd, result.rsd.flatten())
-    np.testing.assert_array_almost_equal(exp_rdd, result.rdd.flatten())
+    np.testing.assert_array_almost_equal(exp_rso, rso[:, 0].flatten())
+    np.testing.assert_array_almost_equal(exp_rdo, rdo[:, 0].flatten())
+    np.testing.assert_array_almost_equal(exp_rsd, rsd[:, 0].flatten())
+    np.testing.assert_array_almost_equal(exp_rdd, rdd[:, 0].flatten())
 
     assert True

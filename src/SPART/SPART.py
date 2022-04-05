@@ -76,22 +76,18 @@ class SPARTConcurrent:
         """
 
         num_simulations = len(simulations)
-        
+
         sensor_infos = [load_sensor_info(sim.sensor) for sim in simulations]
 
         # Calculate ET radiance from the sun for look angles and DOY
         # Calculate extra-terrestrial radiance for the day
         sol_angles = np.array([sim.angles.sol_angle for sim in simulations])
-        wl_srf = np.array([s_info['wl_srf_smac'] for s_info in sensor_infos])
-        p_srf = np.array([s_info['p_srf_smac'] for s_info in sensor_infos])
+        wl_srf = np.array([s_info["wl_srf_smac"] for s_info in sensor_infos])
+        p_srf = np.array([s_info["p_srf_smac"] for s_info in sensor_infos])
         DOY = np.array([sim.DOY for sim in simulations])
 
-        Ra = calculate_ET_radiance(
-            self.ETpar["Ea"], DOY, sol_angles
-        )
-        La = calculate_spectral_convolution(
-            self.ETpar["wl_Ea"], Ra, wl_srf, p_srf
-        )
+        Ra = calculate_ET_radiance(self.ETpar["Ea"], DOY, sol_angles)
+        La = calculate_spectral_convolution(self.ETpar["wl_Ea"], Ra, wl_srf, p_srf)
 
         # Calculate soil optics of each
         soilpars = np.array([sim.soilpar for sim in simulations])
@@ -99,7 +95,10 @@ class SPARTConcurrent:
         soilopts = [BSM(soilpar, self.optipar) for soilpar in soilpars]
         # Update soil optics refl and trans to include thermal
         # values from model assumptions
-        soilopts = [set_soil_refl_trans_assumptions(soilopt, self.spectral) for soilopt in soilopts]
+        soilopts = [
+            set_soil_refl_trans_assumptions(soilopt, self.spectral)
+            for soilopt in soilopts
+        ]
 
         leafopt = PROSPECT_5D(self._leafbio, self.optipar)
         # Update leaf optics refl and trans to include thermal
@@ -162,7 +161,6 @@ class SPARTConcurrent:
             index=sensor_wavelengths,
             columns=["Band", "L_TOA", "R_TOA", "R_TOC"],
         )
-
 
         return results_table
 
@@ -452,7 +450,6 @@ class SpectralBands:
         self.IwlT = np.arange(self.nwlP, self.nwlP + self.nwlT, 1)
 
 
-
 def calculate_ET_radiance(Ea, DOY, tts):
     """
     Calculate extraterrestrial radiation.
@@ -529,9 +526,7 @@ def calculate_spectral_convolution(wl_hi, radiation_spectra, wl_srf, p_srf):
     indx = get_closest_index(wl_srf, wl_hi)
     # NOTE: shape was coming out 3D, we want 2D and it appears last index was just duplicate
     rad_idx = radiation_spectra[indx][:, :, 0]
-    rad = np.reshape(
-        rad_idx, wl_srf.shape, order="F"
-    )
+    rad = np.reshape(rad_idx, wl_srf.shape, order="F")
     # Sum and normalize as p_srf is not normalized.
     rad_conv = np.sum(rad * p_srf, axis=1) / np.sum(p_srf, axis=1)
 

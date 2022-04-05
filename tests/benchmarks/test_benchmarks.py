@@ -54,26 +54,65 @@ def test_benchmark_PROSPECT_5D_100_sim(benchmark, optical_params):
     )
 
 
-def test_benchmark_SAILH(benchmark, soil_optics, leaf_optics, optical_params):
+def test_benchmark_SAILH_one_sim(
+    benchmark, default_soil_optics, default_leaf_optics, optical_params
+):
     # Benchmark using default prospect, BSM, and SAILH values
     canopy_structure = CanopyStructure(3, -0.35, -0.15, 0.05)
     angles = Angles(40, 0, 0)
 
-    result = benchmark(SAILH, soil_optics, leaf_optics, canopy_structure, angles)
+    result = benchmark(
+        SAILH,
+        default_soil_optics.refl,
+        default_leaf_optics.refl,
+        default_leaf_optics.tran,
+        canopy_structure.nlayers,
+        canopy_structure.LAI,
+        canopy_structure.lidf,
+        angles.sol_angle,
+        angles.obs_angle,
+        angles.rel_angle,
+        canopy_structure.q,
+    )
     return result
 
 
-@pytest.fixture
-def soil_optics(optical_params, spectral_bands):
-    # Modify the soil output for input to SAILH
-    soil_parameters = SoilParameters(0.5, 0, 100, 20)
-    soilopt = BSM(soil_parameters, optical_params)
-    _rsoil = np.zeros((spectral_bands.nwlP + spectral_bands.nwlT, 1))
-    _rsoil[spectral_bands.IwlT] = 1
-    _rsoil[spectral_bands.IwlP] = soilopt.refl
-    _rsoil[spectral_bands.IwlT] = 1 * _rsoil[spectral_bands.nwlP - 1]
-    soilopt.refl = _rsoil
-    return soilopt
+def test_benchmark_SAILH_100_sim(
+    benchmark, default_soil_optics, default_leaf_optics, optical_params
+):
+    # Benchmark using default prospect, BSM, and SAILH values
+    canopy_structure = CanopyStructure(3, -0.35, -0.15, 0.05)
+    angles = Angles(40, 0, 0)
+
+    concurrent_tests = 100
+    soil_refl = np.concatenate(
+        [default_soil_optics.refl for _ in range(concurrent_tests)], axis=1
+    )
+    leaf_tran = np.concatenate(
+        [default_leaf_optics.tran for _ in range(concurrent_tests)], axis=1
+    )
+    leaf_refl = np.concatenate(
+        [default_leaf_optics.refl for _ in range(concurrent_tests)], axis=1
+    )
+    lidf = np.concatenate(
+        [canopy_structure.lidf for _ in range(concurrent_tests)], axis=1
+    )
+
+
+    result = benchmark(
+        SAILH,
+        soil_refl,
+        leaf_refl,
+        leaf_tran,
+        np.array([canopy_structure.nlayers] * concurrent_tests),
+        np.array([canopy_structure.LAI] * concurrent_tests),
+        lidf,
+        np.array([angles.sol_angle] * concurrent_tests),
+        np.array([angles.obs_angle] * concurrent_tests),
+        np.array([angles.rel_angle] * concurrent_tests),
+        np.array([canopy_structure.q] * concurrent_tests)
+    )
+    return result
 
 
 @pytest.fixture

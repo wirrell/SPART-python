@@ -39,7 +39,7 @@ def pytest_generate_tests(metafunc):
         else:
             tests = (
                 pd.read_parquet("test_SAILH/SAILH_test_cases.gzip")
-                .sample(10, random_state=42)
+                .sample(1, random_state=42)
                 .iterrows()
             )
         metafunc.parametrize("sail_test_case", tests)

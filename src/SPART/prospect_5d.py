@@ -117,22 +117,9 @@ class LeafOptics:
 
 # mangling __PROSPECT_5D_ - runs as an internal function
 # see we can pull out all non-jittable functions and then just have one jit call to this larger-scoped function
-def PROSPECT_5D(Cab,
-                Cdm,
-                Cw,
-                Cs,
-                Cca,
-                Cant,
-                N,
-                nr,
-                Kdm,
-                Kab,
-                Kca,
-                Kw,
-                Ks,
-                Kant,
-                Kcbc,
-                Kprot):
+def PROSPECT_5D(
+    Cab, Cdm, Cw, Cs, Cca, Cant, N, nr, Kdm, Kab, Kca, Kw, Ks, Kant, Kcbc, Kprot
+):
     """
     PROSPECT_5D model with model runs concurrent.
 
@@ -143,21 +130,7 @@ def PROSPECT_5D(Cab,
         and contribution of chlorophyll over the 400 nm to 2400 nm spectrum
     """
     Kall = make_Kall(
-        Cab,
-        Cca,
-        Cdm,
-        Cw,
-        Cs,
-        Cant,
-        Kab,
-        Kca,
-        Kdm,
-        Kw,
-        Ks,
-        Kant,
-        Kcbc,
-        Kprot,
-        N
+        Cab, Cca, Cdm, Cw, Cs, Cant, Kab, Kca, Kdm, Kw, Ks, Kant, Kcbc, Kprot, N
     )
 
     t1, j = make_j_t1(Kall)
@@ -240,18 +213,9 @@ def expint(x):
 
 
 @numba.njit
-def make_Kall(
-    Cab, Cca, Cdm, Cw, Cs, Cant, Kab, Kca, Kdm, Kw, Ks, Kant, Kcbc, Kprot, N
-):
+def make_Kall(Cab, Cca, Cdm, Cw, Cs, Cant, Kab, Kca, Kdm, Kw, Ks, Kant, Kcbc, Kprot, N):
     # Compact leaf layer
-    Kall = (
-        Cab * Kab
-        + Cca * Kca
-        + Cdm * Kdm
-        + Cw * Kw
-        + Cs * Ks
-        + Cant * Kant
-    ) / N
+    Kall = (Cab * Kab + Cca * Kca + Cdm * Kdm + Cw * Kw + Cs * Ks + Cant * Kant) / N
     return Kall
 
 
