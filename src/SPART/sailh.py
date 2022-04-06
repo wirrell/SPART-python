@@ -324,12 +324,12 @@ def _SAILH_computation_CUDA(
         return rso.get(), rdo.get(), rsd.get(), rdd.get()
 
 
-    def _SAILH_computation(
-        nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, LITAB, Pso
-    ):
-        dx = 1 / nl
-        iLAI = LAI * dx
-        deg2rad = np.pi / 180
+def _SAILH_computation(
+    nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, LITAB, Pso
+):
+    dx = 1 / nl
+    iLAI = LAI * dx
+    deg2rad = np.pi / 180
 
     # Set geometric quantities
     # ensures symmetry at 90 and 270 deg
@@ -731,14 +731,14 @@ def Psofunction(x, K, k, LAI, q, dso):
 
 def Psofunction_pytorch(x, K, k, LAI, q, dso):
     # From APPENDIX IV of original matlab code
-    if dso != 0:
-        alpha = (dso / q) * 2 / (k + K)
-        pso = torch.exp(
-            (K + k) * LAI * x
-            + torch.sqrt(K * k) * LAI / alpha * (1 - torch.exp(x * alpha))
-        )
-    else:
-        pso = torch.exp((K + k) * LAI * x - torch.sqrt(K * k) * LAI * x)
+    alpha = (dso / q) * 2 / (k + K)
+    pso_dso_neq_0 = torch.exp(
+        (K + k) * LAI * x
+        + torch.sqrt(K * k) * LAI / alpha * (1 - torch.exp(x * alpha))
+    )
+    pso_dso_eq_0 = torch.exp((K + k) * LAI * x - torch.sqrt(K * k) * LAI * x)
+
+    pso = torch.where(dso != 0, pso_dso_neq_0, pso_dso_eq_0)
 
     return pso
 
