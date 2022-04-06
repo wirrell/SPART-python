@@ -255,11 +255,12 @@ def _SAILH_computation_CUDA(
             rinf = (a - m) / sigb
             rinf2 = rinf * rinf
 
-        with nvtx.annotate('SAILH - Calculate J arrays', color='green'):
+        with nvtx.annotate('SAILH - Calculate J1 arrays', color='green'):
             # direct solar radiation
             J1k = calcJ1_CUDA(-1, m, k, LAI)
-            J2k = calcJ2_CUDA(0, m, k, LAI)
             J1K = calcJ1_CUDA(-1, m, K, LAI)
+        with nvtx.annotate('SAILH - Calculate J2 arrays', color='green'):
+            J2k = calcJ2_CUDA(0, m, k, LAI)
             J2K = calcJ2_CUDA(0, m, K, LAI)
 
         with nvtx.annotate('SAILH - logic section 3', color='green'):
