@@ -223,6 +223,44 @@ def test_benchmark_SAILH_1000_sim_CUDA(
     return result
 
 
+def test_benchmark_SAILH_1000_sim(
+    benchmark, default_soil_optics, default_leaf_optics, optical_params
+):
+    # Benchmark using default prospect, BSM, and SAILH values
+    canopy_structure = CanopyStructure(3, -0.35, -0.15, 0.05)
+    angles = Angles(40, 0, 0)
+
+    concurrent_tests = 1000
+    soil_refl = np.concatenate(
+        [default_soil_optics.refl for _ in range(concurrent_tests)], axis=1
+    )
+    leaf_tran = np.concatenate(
+        [default_leaf_optics.tran for _ in range(concurrent_tests)], axis=1
+    )
+    leaf_refl = np.concatenate(
+        [default_leaf_optics.refl for _ in range(concurrent_tests)], axis=1
+    )
+    lidf = np.concatenate(
+        [canopy_structure.lidf for _ in range(concurrent_tests)], axis=1
+    )
+
+    result = benchmark(
+        SAILH,
+        soil_refl,
+        leaf_refl,
+        leaf_tran,
+        np.array([canopy_structure.nlayers] * concurrent_tests),
+        np.array([canopy_structure.LAI] * concurrent_tests),
+        lidf,
+        np.array([angles.sol_angle] * concurrent_tests),
+        np.array([angles.obs_angle] * concurrent_tests),
+        np.array([angles.rel_angle] * concurrent_tests),
+        np.array([canopy_structure.q] * concurrent_tests),
+    )
+
+    return result
+
+
 def test_benchmark_SAILH_10000_sim_CUDA(
     benchmark, default_soil_optics, default_leaf_optics, optical_params
 ):
