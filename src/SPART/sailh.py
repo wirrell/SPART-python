@@ -120,8 +120,8 @@ def _SAILH_computation_CUDA(
 
     with cp.cuda.Device(0):
 
+        with nvtx.annotate('SAILH - Move arrays to device', color='green'):
         # Move constituent arrays to device
-        with nvtx.annotate("SAILH - Transfer arrays to GPU"):
             nl = cp.asarray(nl)
             LAI = cp.asarray(LAI)
             lidf = cp.asarray(lidf)
@@ -138,7 +138,7 @@ def _SAILH_computation_CUDA(
             dx = cp.asarray(1 / nl)
             iLAI = cp.asarray(LAI * dx)
 
-        with nvtx.annotate("SAILH - logic section 1"):
+        with nvtx.annotate('SAILH - Logic section 1', color='green'):
             # Set geometric quantities
             # ensures symmetry at 90 and 270 deg
             psi = cp.abs(rel_angle - 360 * cp.round(rel_angle / 360))
@@ -204,7 +204,7 @@ def _SAILH_computation_CUDA(
                     * (1 - cp.exp(-k[i] * LAI[i] * dx[i]))
                     / (k[i] * LAI[i] * dx[i])
                 )
-        with nvtx.annotate("SAILH integration"):
+        with nvtx.annotate('SAILH - Move CuPy arrays to PyTorch', color='green'):
             # Use pytorch and torchquad for integration
             mc = MonteCarlo()
             # TODO: continue here and find way to decorate integrand so that we can
@@ -217,6 +217,7 @@ def _SAILH_computation_CUDA(
             LAI_torch = torch.as_tensor(LAI, device="cuda")
             q_torch = torch.as_tensor(q, device="cuda")
             dso_torch = torch.as_tensor(dso, device="cuda")
+        with nvtx.annotate('SAILH - Integration', color='green'):
             for i in range(Pso.shape[1]):
                 integration_target = integrate_wrapper_CUDA(
                     K_torch[i], k_torch[i], LAI_torch[i], q_torch[i], dso_torch[i]
@@ -235,12 +236,12 @@ def _SAILH_computation_CUDA(
                         )
                     )
 
-            # NOTE: there are two lines in the original script here that deal with
-            # rounding errors. I have excluded them. If this becomes a problem see
-            # lines 115 / 116 in SAILH.m
+        # NOTE: there are two lines in the original script here that deal with
+        # rounding errors. I have excluded them. If this becomes a problem see
+        # lines 115 / 116 in SAILH.m
 
-        with nvtx.annotate("SAILH logic section 2"):
 
+        with nvtx.annotate('SAILH - logic section 2', color='green'):
             # scattering coefficients for
             sigb = ddb * rho + ddf * tau  # diffuse backscatter incidence
             sigf = ddf * rho + ddb * tau  # forward incidence
@@ -254,14 +255,14 @@ def _SAILH_computation_CUDA(
             rinf = (a - m) / sigb
             rinf2 = rinf * rinf
 
-        with nvtx.annotate("SAILH Calc J arrays"):
+        with nvtx.annotate('SAILH - Calculate J arrays', color='green'):
             # direct solar radiation
             J1k = calcJ1_CUDA(-1, m, k, LAI)
             J2k = calcJ2_CUDA(0, m, k, LAI)
             J1K = calcJ1_CUDA(-1, m, K, LAI)
             J2K = calcJ2_CUDA(0, m, K, LAI)
 
-        with nvtx.annotate("SAILH logic section 3"):
+        with nvtx.annotate('SAILH - logic section 3', color='green'):
             e1 = cp.exp(-m * LAI)
             e2 = e1 ** 2
             re = rinf * e1
@@ -307,26 +308,26 @@ def _SAILH_computation_CUDA(
             # Sail analytical reflectances
             denom = 1 - rs * rho_dd
 
-        rso = (
-            rho_so
-            + rs * Pso2w
-            + ((tau_sd + tau_ss * rs * rho_dd) * tau_oo + (tau_sd + tau_ss) * tau_do)
-            * rs
-            / denom
-        )
-        rdo = rho_do + (tau_oo + tau_do) * rs * tau_dd / denom
-        rsd = rho_sd + (tau_ss + tau_sd) * rs * tau_dd / denom
-        rdd = rho_dd + tau_dd * rs * tau_dd / denom
+            rso = (
+                rho_so
+                + rs * Pso2w
+                + ((tau_sd + tau_ss * rs * rho_dd) * tau_oo + (tau_sd + tau_ss) * tau_do)
+                * rs
+                / denom
+            )
+            rdo = rho_do + (tau_oo + tau_do) * rs * tau_dd / denom
+            rsd = rho_sd + (tau_ss + tau_sd) * rs * tau_dd / denom
+            rdd = rho_dd + tau_dd * rs * tau_dd / denom
 
-    return rso.get(), rdo.get(), rsd.get(), rdd.get()
+        return rso.get(), rdo.get(), rsd.get(), rdd.get()
 
 
-def _SAILH_computation(
-    nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, LITAB, Pso
-):
-    dx = 1 / nl
-    iLAI = LAI * dx
-    deg2rad = np.pi / 180
+    def _SAILH_computation(
+        nl, LAI, lidf, rho, tau, rs, tts, tto, rel_angle, q, XL, LITAB, Pso
+    ):
+        dx = 1 / nl
+        iLAI = LAI * dx
+        deg2rad = np.pi / 180
 
     # Set geometric quantities
     # ensures symmetry at 90 and 270 deg
