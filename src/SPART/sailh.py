@@ -13,7 +13,7 @@ import cupy as cp
 import numba
 import torch
 import scipy.integrate as integrate
-from torchquad import MonteCarlo, enable_cuda
+from torchquad import MonteCarlo, enable_cuda, set_log_level
 
 
 def SAILH(
@@ -117,6 +117,7 @@ def _SAILH_computation_CUDA(
 ):
     # Enable torchquad cuda, used in integration
     enable_cuda()
+    set_log_level('ERROR')
 
     with cp.cuda.Device(0):
 
@@ -532,24 +533,22 @@ def calcJ1(x, m, k, LAI):
 
 def calcJ1_CUDA(x, m, k, LAI):
     # For getting numerically stable solutions
-    J1 = cp.zeros(m.shape)
-    sing = cp.abs((m - k) * LAI) < 1e-6
+    not_sing = cp.abs((m - k) * LAI) >= 1e-6
 
-    CS = cp.argwhere(sing)
-    CN = cp.argwhere(~sing)
+    J1_neg = (cp.exp(m * LAI * x) - cp.exp(k * LAI * x)) / (
+        k - m
+    )
 
-    for i, j in CN:
-        J1[i, j] = (cp.exp(m[i, j] * LAI[j] * x) - cp.exp(k[j] * LAI[j] * x)) / (
-            k[j] - m[i, j]
-        )
-    for i, j in CS:
-        J1[i, j] = (
-            -0.5
-            * (cp.exp(m[i, j] * LAI[j] * x) + cp.exp(k[j] * LAI[j] * x))
-            * LAI[j]
-            * x
-            * (1 - 1 / 12 * (k[j] - m[i, j]) ** 2 * LAI[j] ** 2)
-        )
+    J1 = (
+        -0.5
+        * (cp.exp(m * LAI * x) + cp.exp(k * LAI * x))
+        * LAI
+        * x
+        * (1 - 1 / 12 * (k - m) ** 2 * LAI ** 2)
+    )
+
+    J1[not_sing] = J1_neg[not_sing]
+
     return J1
 
 
