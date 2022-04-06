@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+import cupy as cp
 
 from SPART.prospect_5d import LeafBiology, PROSPECT_5D
 from SPART.bsm import SoilParameters, BSM
@@ -84,6 +85,9 @@ def test_benchmark_SAILH_one_sim_CUDA(
     canopy_structure = CanopyStructure(3, -0.35, -0.15, 0.05)
     angles = Angles(40, 0, 0)
 
+    # Init CUDA
+    cp.asarray(np.array([0]))
+
     result = benchmark(
         SAILH,
         default_soil_optics.refl,
@@ -108,6 +112,8 @@ def test_benchmark_SAILH_100_sim_CUDA(
     canopy_structure = CanopyStructure(3, -0.35, -0.15, 0.05)
     angles = Angles(40, 0, 0)
 
+    # Init CUDA
+    cp.asarray(np.array([0]))
     concurrent_tests = 100
     soil_refl = np.concatenate(
         [default_soil_optics.refl for _ in range(concurrent_tests)], axis=1
@@ -176,6 +182,105 @@ def test_benchmark_SAILH_100_sim(
         np.array([canopy_structure.q] * concurrent_tests)
     )
     return result
+
+
+def test_benchmark_SAILH_1000_sim_CUDA(
+    benchmark, default_soil_optics, default_leaf_optics, optical_params
+):
+    # Benchmark using default prospect, BSM, and SAILH values
+    canopy_structure = CanopyStructure(3, -0.35, -0.15, 0.05)
+    angles = Angles(40, 0, 0)
+
+    concurrent_tests = 1000
+    soil_refl = np.concatenate(
+        [default_soil_optics.refl for _ in range(concurrent_tests)], axis=1
+    )
+    leaf_tran = np.concatenate(
+        [default_leaf_optics.tran for _ in range(concurrent_tests)], axis=1
+    )
+    leaf_refl = np.concatenate(
+        [default_leaf_optics.refl for _ in range(concurrent_tests)], axis=1
+    )
+    lidf = np.concatenate(
+        [canopy_structure.lidf for _ in range(concurrent_tests)], axis=1
+    )
+
+    result = benchmark(
+        SAILH,
+        soil_refl,
+        leaf_refl,
+        leaf_tran,
+        np.array([canopy_structure.nlayers] * concurrent_tests),
+        np.array([canopy_structure.LAI] * concurrent_tests),
+        lidf,
+        np.array([angles.sol_angle] * concurrent_tests),
+        np.array([angles.obs_angle] * concurrent_tests),
+        np.array([angles.rel_angle] * concurrent_tests),
+        np.array([canopy_structure.q] * concurrent_tests),
+        use_CUDA=True
+    )
+
+    return result
+
+
+def test_benchmark_SAILH_10000_sim_CUDA(
+    benchmark, default_soil_optics, default_leaf_optics, optical_params
+):
+    # Benchmark using default prospect, BSM, and SAILH values
+    canopy_structure = CanopyStructure(3, -0.35, -0.15, 0.05)
+    angles = Angles(40, 0, 0)
+
+    concurrent_tests = 10000
+    soil_refl = np.concatenate(
+        [default_soil_optics.refl for _ in range(concurrent_tests)], axis=1
+    )
+    leaf_tran = np.concatenate(
+        [default_leaf_optics.tran for _ in range(concurrent_tests)], axis=1
+    )
+    leaf_refl = np.concatenate(
+        [default_leaf_optics.refl for _ in range(concurrent_tests)], axis=1
+    )
+    lidf = np.concatenate(
+        [canopy_structure.lidf for _ in range(concurrent_tests)], axis=1
+    )
+
+    result = benchmark(
+        SAILH,
+        soil_refl,
+        leaf_refl,
+        leaf_tran,
+        np.array([canopy_structure.nlayers] * concurrent_tests),
+        np.array([canopy_structure.LAI] * concurrent_tests),
+        lidf,
+        np.array([angles.sol_angle] * concurrent_tests),
+        np.array([angles.obs_angle] * concurrent_tests),
+        np.array([angles.rel_angle] * concurrent_tests),
+        np.array([canopy_structure.q] * concurrent_tests),
+        use_CUDA=True
+    )
+
+    return result
+
+
+@pytest.fixture
+def leaf_optics(optical_params, spectral_bands):
+    # Modify the PROSPECT output for input to SAILH
+    leafbio = LeafBiology(40, 0.01, 0.02, 0, 10, 10, 1.5)
+    leafopt = PROSPECT_5D(leafbio, optical_params)
+    _rho = np.zeros((spectral_bands.nwlP + spectral_bands.nwlT, 1))
+    _tau = np.zeros((spectral_bands.nwlP + spectral_bands.nwlT, 1))
+    _rho[spectral_bands.IwlT] = leafbio.rho_thermal
+    _tau[spectral_bands.IwlT] = leafbio.tau_thermal
+    _rho[spectral_bands.IwlP] = leafopt.refl
+    _tau[spectral_bands.IwlP] = leafopt.tran
+    leafopt.refl = _rho
+    leafopt.tran = _tau
+    return leafopt
+
+
+@pytest.fixture
+def spectral_bands():
+    return SpectralBands()
 
 
 @pytest.fixture

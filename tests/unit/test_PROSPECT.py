@@ -14,6 +14,52 @@ def prospect_test_case(request):
     return request.param
 
 
+def test_compare_PROSPECT_5D_versions(prospect_test_case, optical_params):
+    num, test_case = prospect_test_case
+    # NOTE: we no longer use this class for direct interaction with prospect
+    # leaf_biology = LeafBiology(*test_case[:7])
+    exp_refl = test_case[7:2008].to_numpy()
+    exp_tran = test_case[2008:4009].to_numpy()
+    exp_kchl = test_case[4009:6010].to_numpy()
+    import torch
+    torch.set_printoptions(precision=6)
+
+    result_cpu = PROSPECT_5D(
+        *test_case[:7],
+        optical_params["nr"],
+        optical_params["Kdm"],
+        optical_params["Kab"],
+        optical_params["Kca"],
+        optical_params["Kw"],
+        optical_params["Ks"],
+        optical_params["Kant"],
+        optical_params["cbc"],
+        optical_params["prot"],
+    )
+    result_gpu = PROSPECT_5D(
+        *test_case[:7],
+        optical_params["nr"],
+        optical_params["Kdm"],
+        optical_params["Kab"],
+        optical_params["Kca"],
+        optical_params["Kw"],
+        optical_params["Ks"],
+        optical_params["Kant"],
+        optical_params["cbc"],
+        optical_params["prot"],
+        use_CUDA=True
+    )
+    print(result_cpu)
+    print(result_gpu)
+    return
+    
+
+    np.testing.assert_almost_equal(exp_refl, refl[:, 0].flatten())
+    np.testing.assert_almost_equal(exp_tran, tran[:, 0].flatten())
+    np.testing.assert_almost_equal(exp_kchl, kChlrel[:, 0].flatten())
+    assert True
+
+
 def test_PROSPECT_5D(prospect_test_case, optical_params):
     num, test_case = prospect_test_case
     # NOTE: we no longer use this class for direct interaction with prospect
@@ -33,6 +79,36 @@ def test_PROSPECT_5D(prospect_test_case, optical_params):
         optical_params["Kant"],
         optical_params["cbc"],
         optical_params["prot"],
+    )
+
+    np.testing.assert_almost_equal(exp_refl, refl[:, 0].flatten())
+    np.testing.assert_almost_equal(exp_tran, tran[:, 0].flatten())
+    np.testing.assert_almost_equal(exp_kchl, kChlrel[:, 0].flatten())
+    assert True
+
+
+
+
+def test_PROSPECT_5D_pytorch(prospect_test_case, optical_params):
+    num, test_case = prospect_test_case
+    # NOTE: we no longer use this class for direct interaction with prospect
+    # leaf_biology = LeafBiology(*test_case[:7])
+    exp_refl = test_case[7:2008].to_numpy()
+    exp_tran = test_case[2008:4009].to_numpy()
+    exp_kchl = test_case[4009:6010].to_numpy()
+
+    refl, tran, kChlrel = PROSPECT_5D(
+        *test_case[:7],
+        optical_params["nr"],
+        optical_params["Kdm"],
+        optical_params["Kab"],
+        optical_params["Kca"],
+        optical_params["Kw"],
+        optical_params["Ks"],
+        optical_params["Kant"],
+        optical_params["cbc"],
+        optical_params["prot"],
+        use_CUDA=True
     )
 
     np.testing.assert_almost_equal(exp_refl, refl[:, 0].flatten())

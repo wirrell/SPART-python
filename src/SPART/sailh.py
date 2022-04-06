@@ -205,6 +205,7 @@ def _SAILH_computation_CUDA(
                     * (1 - cp.exp(-k[i] * LAI[i] * dx[i]))
                     / (k[i] * LAI[i] * dx[i])
                 )
+        """
         with nvtx.annotate('SAILH - Move CuPy arrays to PyTorch', color='green'):
             # Use pytorch and torchquad for integration
             mc = MonteCarlo()
@@ -236,6 +237,27 @@ def _SAILH_computation_CUDA(
                             / dx_torch[i]
                         )
                     )
+        """
+        XL_cpu = XL.get()
+        dx_cpu = dx.get()
+        K_cpu = K.get()
+        k_cpu = k.get()
+        LAI_cpu = LAI.get()
+        q_cpu = q.get()
+        dso_cpu = dso.get()
+        Pso = Pso.get()
+        for j in range(XL.shape[0]):
+            for i in range(Pso.shape[1]):
+                Pso[j, i] = (
+                    integrate.quad(
+                        Psofunction,
+                        XL_cpu[j] - dx_cpu[i],
+                        XL_cpu[j],
+                        args=(K_cpu[i], k_cpu[i], LAI_cpu[i], q_cpu[i], dso_cpu[i]),
+                    )[0]
+                    / dx_cpu[i]
+                )
+        Pso = cp.asarray(Pso)
 
         # NOTE: there are two lines in the original script here that deal with
         # rounding errors. I have excluded them. If this becomes a problem see

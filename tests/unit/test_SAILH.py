@@ -42,10 +42,10 @@ def test_SAILH_CUDA(
     )
 
     # raises error if not equal
-    np.testing.assert_array_almost_equal(exp_rso, rso.flatten(), decimal=4)
-    np.testing.assert_array_almost_equal(exp_rdo, rdo.flatten(), decimal=4)
-    np.testing.assert_array_almost_equal(exp_rsd, rsd.flatten(), decimal=4)
-    np.testing.assert_array_almost_equal(exp_rdd, rdd.flatten(), decimal=4)
+    np.testing.assert_array_almost_equal(exp_rso, rso.flatten(), decimal=5)
+    np.testing.assert_array_almost_equal(exp_rdo, rdo.flatten(), decimal=5)
+    np.testing.assert_array_almost_equal(exp_rsd, rsd.flatten(), decimal=5)
+    np.testing.assert_array_almost_equal(exp_rdd, rdd.flatten(), decimal=5)
 
     assert True
 
